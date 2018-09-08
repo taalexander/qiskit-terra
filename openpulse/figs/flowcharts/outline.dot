@@ -1,0 +1,120 @@
+
+digraph Outline {
+edge [dir="back"];
+node [shape="rectangle"];
+newrank=true;
+
+
+
+subgraph cluster_QASM{
+node [style=filled,color=white];
+graph[style=dotted];
+style=filled;
+color=gray;
+label = "QASM";
+
+
+QuantumCircuit -> DAGCircuit;
+
+
+subgraph cluster_QASMCLI{
+node [style=filled,color=white];
+graph[style=dotted];
+style=filled;
+color=lightgray;
+label = "CLI";
+QuantumCircuit-> Register;
+Register -> ClassicalRegister;
+Register -> QuantumRegister ;
+QuantumCircuit -> Instruction;
+Instruction -> Gate;
+Gate -> CompositeGate;
+Register -> Gate
+}
+
+}
+
+
+
+subgraph cluster_PULSE{
+node [style=filled,color=palegreen1];
+graph[style=dotted];
+style=filled;
+color=gray;
+label="PULSE";
+subgraph cluster_PULSECLI{
+graph[style=dotted];
+style=filled;
+color=lightgray;
+label = "CLI";
+Experiment -> Command
+Command -> Acquire
+Command -> InputPulse
+Command -> "..."
+Experiment -> PulseLibrary
+PulseLibrary -> InputPulse
+}
+Experiment -> Scheduler
+}
+
+subgraph cluster_unroller{
+node [style=filled,color=white];
+graph[style=dotted];
+style=filled;
+color=gray;
+label="Unroller";
+
+Unroller -> JSONBackend;
+Unroller -> DAGUnroller ;
+DAGUnroller -> DAGCircuit;
+DAGCircuit-> Unroller;
+Unroller -> SchedulerUnroller [label="How is this done?",color=yellow];
+JSONBackend -> QObj;
+QObj -> PULSE;
+QObj -> QASM;
+
+}
+
+subgraph cluster_compile{
+node [style=filled,color=white,shape=ellipse];
+graph[style=dotted];
+style=filled;
+color=gray;
+label="Compilation";
+PassManager[shape=rectangle];
+PassManager -> Mapper;
+PassManager -> PulseOptimizer;
+CouplingGraph -> PassManager [dir="both"];
+CouplingGraph [shape=rectangle];
+
+}
+
+subgraph cluster_configuration{
+node [style=filled,color=white,shape=ellipse];
+graph[style=dotted];
+style=filled;
+color=gray;
+label="Configuration";
+
+Device->BackendConfiguration;
+Device->BackendDefaults;
+}
+
+User [shape=Mdiamond];
+User -> QuantumCircuit;
+User -> Experiment;
+Provider [shape=Mdiamond];
+Provider -> Device
+{rank=same;User;Provider}
+
+DAGCircuit -> PassManager [label="initial layout"];
+PassManager -> DAGUnroller;
+PassManager;
+DAGCircuit -> Scheduler [label="initial layout"];
+Scheduler -> PassManager
+PassManager -> SchedulerUnroller
+
+{rank=same;Experiment;QuantumCircuit}
+{rank=same;Command;Instruction}
+{rank=same;Scheduler;DAGCircuit}
+}
