@@ -48,9 +48,15 @@ style=filled;
 color=lightgray;
 label = "CLI";
 Experiment -> Command
+Experiment -> QuantumRegister [style=dotted]
+Experiment -> ClassicalRegister [style=dotted]
+Experiment -> MemorySlot
 Command -> Acquire
 Command -> InputPulse
 Command -> "..."
+Command -> CompositeCommand
+{rank=same;Command;CompositeCommand}
+#CompositeCommand -> Gate
 Experiment -> PulseLibrary
 PulseLibrary -> InputPulse
 }
@@ -95,7 +101,7 @@ graph[style=dotted];
 style=filled;
 color=gray;
 label="Configuration";
-
+Device [shape=square]
 Device->BackendConfiguration;
 Device->BackendDefaults;
 }
@@ -113,7 +119,7 @@ PassManager;
 DAGCircuit -> Scheduler [label="initial layout"];
 Scheduler -> PassManager
 PassManager -> SchedulerUnroller
-
+BackendConfiguration -> Experiment
 {rank=same;Experiment;QuantumCircuit}
 {rank=same;Command;Instruction}
 {rank=same;Scheduler;DAGCircuit}
