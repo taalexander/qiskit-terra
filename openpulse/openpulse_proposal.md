@@ -37,16 +37,6 @@ The client requires tools and interfaces to easily build Qobjs in order to run e
 
 ## Design and Questions
 - Builder for pulse experiments, `PulseBuilder`.
-  - `PulseBuilder` has list of `Command`s.
-  - `Command` is OpenPulse command ie.
-    - `InputPulse`
-    - `Acquire`
-    - `FrameChange`
-    - ...
-  - `CompositeCommand` is grouping of commands
-     on multiple qubits.
-  - Enforces proper time sequencing for commands ie. no overlap.
-  - Commands apply to qubits.
   - How are qubits represented?
     - Qubits are physical as a given pulse will only apply to its respective qubit.
     - Builder could consume configuration on initialization
@@ -57,18 +47,28 @@ The client requires tools and interfaces to easily build Qobjs in order to run e
         - `MemorySlot`s
       - Builder creates `PulseLibrary` (list) that stores
         pulses.
+  - `Experiment` is initialized with `PulseBuilder`.
+    - `Experiment` is list of `PulseBuilder` `Command`s.
+    - `Command` is OpenPulse command ie.
+      - `InputPulse`
+      - `Acquire`
+      - `FrameChange`
+      - ...
+    - `CompositeCommand` is grouping of commands
+       on multiple qubits.
+    - Enforces proper time sequencing for commands ie. no overlap.
+    - `Experiment` may be combined with eachother
+    - Fundamental representation of `Experiment` is `DAGScheduler`.
+    - Commands apply to qubits.
   - `cmd_def` is returned from `backend_defaults`.
-    - `QuantumCircuit` will define new `Instruction`
+    - `QuantumCircuit` will define new `Instruction`,
       `InstructionCommand`.
         - `InstructionCommand` relates a PULSE `Command` to a QASM `Instruction`
     - On initialization `PulseBuilder` builds a `InstructionCommand` hash table (`dict`) from `cmd_def`.
       - Ie. to request instruction for CX gate from qubit 1
-        to qubit 2
+        ->  qubit 2.
         - `experiment.instruction['cx'][(qc1,qc2)]`
         - Handles instruction directionality.
-    - `Experiment` initializes with `PulseBuilder`
-      - `Experiment` consists of list of `PulseBuilder` instructions
-
 
   - `Kernel` callable on measurement result.
     - Returns filtered measurement result.
@@ -82,10 +82,19 @@ The client requires tools and interfaces to easily build Qobjs in order to run e
 - How do we build `PULSE` from `QASM`?
   - Desire a given `QuantumCircuit` to be compiled to pulse
     `Experiment`.
-  - `QuantumCircuit` builds to `DAGCircuit`
-  - `Experiment` builds to `DAGScheduler`
-  - `compile` is passed list of `QuantumCircuits`,`Experiments`,`PulseBuilder` and `layout`.
-  - 
+    - This may then be compiled to `Qobj`
+    - Therefore we require `DAGCircuit`->`DAGScheduler`->`Qobj`.
+    - We will likely require `DAGScheduler`->`DAGCircuit` as well.
+  - `QuantumCircuit` builds to `DAGCircuit`.
+  - `Experiment` builds to `DAGScheduler`.
+
+  - `compile` is passed list of `QuantumCircuits`,`Experiments`,`Backend` and `layout`.
+    - Compile initializes `PassManager`
+      - Passes are fed `DAGCircuit`, `DAGScheduler`
+      - Passes capable of QASM circuit optimization
+      - Passes capable of changing layout
+      - Pulse sequencing
+    - Compile outputs to PULSE `QObj`.
 
 
 ### Rudimentary API definition

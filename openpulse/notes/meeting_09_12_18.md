@@ -1,0 +1,49 @@
+# OpenPulse into Place
+- pulse by end of December
+- Erick
+  - qc code to gitlab to github
+    - testing in place
+    - qobj in that
+    - Continuous integration
+- Mohan
+  - setting up Brain and Pinky
+  - New queuing
+    - On development (soon)
+    - Simulator in staging
+  - Once Brain setup redo Pinky  
+- Paul continue doing Pulse
+  - Noise similar to Aer
+- Thomas
+  - Work with Paul
+  - Table QASM2PULSE
+  - Davids repo
+    - Run Rabi, Ramsey, T1, Dynamical Decoupling
+    - QCcode to implement them
+      - qiskit-openpulse
+  - Run pulse file on experiment
+  - KNOW QCCODE
+  - Add to it ability to run scripts.
+  - Not be orthogonal to everyone else.
+  - Biggest deficiency
+    - Doesn't do anything with the measurement
+    - Can't get results back
+    - Write fitter?
+
+- DEFINITIONS OF SUCCESS: Client can run rabi at end of year.
+  - Branch you can do that today
+- Let Jay know next week if we think this is possible or not.
+  - Dario by next Thursday
+- How do we break up runscore?
+  - Controller type architecture
+- Paul will get pulse files from `QCtrl`.
+- API to regular `QObj` all the way in.
+- LabUser and QUser
+- December across all backends or update for Poughkeepsie machine?
+- Public devices with different level of control?  
+- One pathway to everything
+- Qobj Qasm
+- Qobj Pulse
+- How do we control access?
+- Calibration scripts with OpenPulse
+- Score to OpenPulse?
+  - OpenPulse is more verbose than score? 

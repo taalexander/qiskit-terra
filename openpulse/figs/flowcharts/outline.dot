@@ -28,6 +28,8 @@ Register -> ClassicalRegister;
 Register -> QuantumRegister ;
 QuantumCircuit -> Instruction;
 Instruction -> Gate;
+Instruction -> InstructionCommand;
+{rank=same;Instruction;InstructionCommand}
 Gate -> CompositeGate;
 Register -> Gate
 }
@@ -47,6 +49,7 @@ graph[style=dotted];
 style=filled;
 color=lightgray;
 label = "CLI";
+PulseBuilder -> Experiment
 Experiment -> Command
 Experiment -> QuantumRegister [style=dotted]
 Experiment -> ClassicalRegister [style=dotted]
@@ -55,7 +58,8 @@ Command -> Acquire
 Command -> InputPulse
 Command -> "..."
 Command -> CompositeCommand
-{rank=same;Command;CompositeCommand}
+Command -> InstructionCommand [label="layout"]
+#{rank=same;Command;CompositeCommand}
 #CompositeCommand -> Gate
 Experiment -> PulseLibrary
 PulseLibrary -> InputPulse
@@ -113,14 +117,15 @@ Provider [shape=Mdiamond];
 Provider -> Device
 {rank=same;User;Provider}
 
-DAGCircuit -> PassManager [label="initial layout"];
+DAGCircuit -> PassManager [label="layout"];
 PassManager -> DAGUnroller;
 PassManager;
-DAGCircuit -> Scheduler [label="initial layout"];
+DAGCircuit -> Scheduler [label="layout"];
 Scheduler -> PassManager
 PassManager -> SchedulerUnroller
-BackendConfiguration -> Experiment
-{rank=same;Experiment;QuantumCircuit}
-{rank=same;Command;Instruction}
-{rank=same;Scheduler;DAGCircuit}
+BackendConfiguration -> PulseBuilder
+BackendDefaults -> PulseBuilder
+#{rank=same;Experiment;QuantumCircuit}
+#{rank=same;Command;Instruction}
+#{rank=same;Scheduler;DAGCircuit}
 }
