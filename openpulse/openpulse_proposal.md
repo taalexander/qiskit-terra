@@ -87,7 +87,11 @@ The client requires tools and interfaces to easily build Qobjs in order to run e
     - We will likely require `DAGScheduler`->`DAGCircuit` as well.
   - `QuantumCircuit` builds to `DAGCircuit`.
   - `Experiment` builds to `DAGScheduler`.
-
+    - Lev pointed out some great points.
+    - Why do we need a `DAG` for the pulses?
+      - Every QASM `Instruction` will have a `Command`
+      - Why not find someway to mark up the Transpiler DAG in some some
+      - Per Lev's instruction I'm going to look into LLVM
   - `compile` is passed list of `QuantumCircuits`,`Experiments`,`Backend` and `layout`.
     - Compile initializes `PassManager`
       - Passes are fed `DAGCircuit`, `DAGScheduler`
@@ -96,6 +100,7 @@ The client requires tools and interfaces to easily build Qobjs in order to run e
       - Pulse sequencing
     - Compile outputs to PULSE `QObj`.
 
+![API classes](figs/flowcharts/outline.png)
 
 ### Rudimentary API definition
 
