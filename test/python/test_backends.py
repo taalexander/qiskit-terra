@@ -36,31 +36,37 @@ class TestBackends(QiskitTestCase):
         self.assertTrue(len(local) > 0)
 
     @requires_qe_access
-    def test_remote_backends_exist(self, qe_token, qe_url):
+    def test_remote_backends_exist(self, qe_tokens, qe_urls):
         """Test if there are remote backends.
 
         If all correct some should exists.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         IBMQ.enable_account(qe_token, qe_url)
         remotes = IBMQ.backends()
         self.assertTrue(len(remotes) > 0)
 
     @requires_qe_access
-    def test_remote_backends_exist_real_device(self, qe_token, qe_url):
+    def test_remote_backends_exist_real_device(self, qe_tokens, qe_urls):
         """Test if there are remote backends that are devices.
 
         If all correct some should exists.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         IBMQ.enable_account(qe_token, qe_url)
         remotes = IBMQ.backends(simulator=False)
         self.assertTrue(remotes)
 
     @requires_qe_access
-    def test_remote_backends_exist_simulator(self, qe_token, qe_url):
+    def test_remote_backends_exist_simulator(self, qe_tokens, qe_urls):
         """Test if there are remote backends that are simulators.
 
         If all correct some should exists.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         IBMQ.enable_account(qe_token, qe_url)
         remotes = IBMQ.backends(simulator=True)
         self.assertTrue(remotes)
@@ -91,14 +97,15 @@ class TestBackends(QiskitTestCase):
         jsonschema.validate(status, schema)
 
     @requires_qe_access
-    def test_remote_backend_status(self, qe_token, qe_url):
+    def test_remote_backend_status(self, qe_tokens, qe_urls):
         """Test backend_status.
 
         If all correct should pass the validation.
         """
         # FIXME: reintroduce in 0.6
         self.skipTest('Skipping due to available vs operational')
-
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         IBMQ.enable_account(qe_token, qe_url)
         remotes = IBMQ.backends()
         remotes = remove_backends_from_list(remotes)
@@ -127,11 +134,13 @@ class TestBackends(QiskitTestCase):
             jsonschema.validate(configuration, schema)
 
     @requires_qe_access
-    def test_remote_backend_configuration(self, qe_token, qe_url):
+    def test_remote_backend_configuration(self, qe_tokens, qe_urls):
         """Test backend configuration.
 
         If all correct should pass the validation.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         IBMQ.enable_account(qe_token, qe_url)
         remotes = IBMQ.backends(simulator=False)
         for backend in remotes:
@@ -155,11 +164,13 @@ class TestBackends(QiskitTestCase):
             self.assertEqual(len(properties), 0)
 
     @requires_qe_access
-    def test_remote_backend_properties(self, qe_token, qe_url):
+    def test_remote_backend_properties(self, qe_tokens, qe_urls):
         """Test backend properties.
 
         If all correct should pass the validation.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         IBMQ.enable_account(qe_token, qe_url)
         remotes = IBMQ.backends(simulator=False)
         for backend in remotes:

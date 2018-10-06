@@ -32,8 +32,10 @@ class TestWrapper(QiskitTestCase):
         self.circuit.measure(qr, cr)
 
     @requires_qe_access
-    def test_wrapper_register_ok(self, qe_token, qe_url):
+    def test_wrapper_register_ok(self, qe_tokens, qe_urls):
         """Test wrapper.register()."""
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.wrapper.register(qe_token, qe_url)
         backends = qiskit.wrapper.available_backends()
         backends = remove_backends_from_list(backends)
@@ -41,8 +43,10 @@ class TestWrapper(QiskitTestCase):
         self.assertTrue(len(backends) > 0)
 
     @requires_qe_access
-    def test_backends_with_filter(self, qe_token, qe_url):
+    def test_backends_with_filter(self, qe_tokens, qe_urls):
         """Test wrapper.available_backends(filter=...)."""
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.wrapper.register(qe_token, qe_url)
         backends = qiskit.wrapper.available_backends({'local': False,
                                                       'simulator': True})
@@ -56,8 +60,10 @@ class TestWrapper(QiskitTestCase):
         self.assertTrue(len(aer_backends) > 0)
 
     @requires_qe_access
-    def test_register_twice(self, qe_token, qe_url):
+    def test_register_twice(self, qe_tokens, qe_urls):
         """Test double registration of the same credentials."""
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.wrapper.register(qe_token, qe_url)
         initial_providers = registered_providers()
 

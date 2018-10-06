@@ -263,7 +263,7 @@ def _get_credentials(test_object, test_options):
         test_options (dict): Options after QISKIT_TESTS was parsed by get_test_options.
 
     Returns:
-        Credentials: set of credentials
+        list: List of `Credentials`
 
     Raises:
         Exception: When the credential could not be set and they are needed for that set of options
@@ -275,11 +275,14 @@ def _get_credentials(test_object, test_options):
     if test_options['mock_online']:
         return dummy_credentials
 
-    if os.getenv('USE_ALTERNATE_ENV_CREDENTIALS', False):
+    if bool(os.getenv('USE_ALTERNATE_ENV_CREDENTIALS', False)):
         # Special case: instead of using the standard credentials mechanism,
         # load them from different environment variables. This assumes they
         # will always be in place, as is used by the Travis setup.
-        return Credentials(os.getenv('IBMQ_TOKEN'), os.getenv('IBMQ_URL'))
+        ibmq_tokens = [tok.strip() for tok in os.getenv('IBMQ_TOKENS').split(',')]
+        ibmq_urls = [url.strip() for url in os.getenv('IBMQ_URLS').split(',')]
+        return [Credentials(ibmq_token, ibmq_url) for (ibmq_token,
+                                                       ibmq_url) in zip(ibmq_tokens, ibmq_urls)]
     else:
         # Attempt to read the standard credentials.
         discovered_credentials = discover_credentials()
@@ -289,12 +292,12 @@ def _get_credentials(test_object, test_options):
             if len(discovered_credentials) > 1:
                 try:
                     # Attempt to use QE credentials.
-                    return discovered_credentials[dummy_credentials.unique_id()]
+                    return [discovered_credentials[dummy_credentials.unique_id()]]
                 except KeyError:
                     pass
 
             # Use the first available credentials.
-            return list(discovered_credentials.values())[0]
+            return discovered_credentials.values()
 
     # No user credentials were found.
     if test_options['rec']:
@@ -360,9 +363,10 @@ def requires_qe_access(func):
             raise unittest.SkipTest('Skipping online tests')
 
         credentials = _get_credentials(self, TEST_OPTIONS)
-        self.using_ibmq_credentials = credentials.is_ibmq()
-        kwargs.update({'qe_token': credentials.token,
-                       'qe_url': credentials.url})
+        # First credential is IBMQ?
+        self.using_ibmq_credentials = credentials[0].is_ibmq()
+        kwargs.update({'qe_tokens': [credential.token for credential in credentials],
+                       'qe_urls': [credential.url for credential in credentials]})
 
         decorated_func = func
         if TEST_OPTIONS['rec'] or TEST_OPTIONS['mock_online']:

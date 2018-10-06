@@ -149,8 +149,10 @@ class TestIBMQAccounts(QiskitTestCase):
             self.assertEqual(len(read_credentials_from_qiskitrc()), 0)
 
     @requires_qe_access
-    def test_pass_bad_proxy(self, qe_token, qe_url):
+    def test_pass_bad_proxy(self, qe_tokens, qe_urls):
         """Test proxy pass through."""
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         failed = False
         try:
             qiskit.IBMQ.enable_account(qe_token, qe_url, proxies=PROXIES)

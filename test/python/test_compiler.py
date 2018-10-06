@@ -160,11 +160,13 @@ class TestCompiler(QiskitTestCase):
         self.assertIsInstance(results, Result)
 
     @requires_qe_access
-    def test_compile_remote(self, qe_token, qe_url):
+    def test_compile_remote(self, qe_tokens, qe_urls):
         """Test Compiler remote.
 
         If all correct some should exists.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.IBMQ.enable_account(qe_token, qe_url)
         backend = least_busy(qiskit.IBMQ.backends())
 
@@ -181,11 +183,13 @@ class TestCompiler(QiskitTestCase):
         self.assertIsInstance(qobj, Qobj)
 
     @requires_qe_access
-    def test_compile_two_remote(self, qe_token, qe_url):
+    def test_compile_two_remote(self, qe_tokens, qe_urls):
         """Test Compiler remote on two circuits.
 
         If all correct some should exists.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.IBMQ.enable_account(qe_token, qe_url)
         backend = least_busy(qiskit.IBMQ.backends())
 
@@ -203,11 +207,13 @@ class TestCompiler(QiskitTestCase):
         self.assertIsInstance(qobj, Qobj)
 
     @requires_qe_access
-    def test_compile_run_remote(self, qe_token, qe_url):
+    def test_compile_run_remote(self, qe_tokens, qe_urls):
         """Test Compiler and run remote.
 
         If all correct some should exists.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.IBMQ.enable_account(qe_token, qe_url)
         backend = qiskit.IBMQ.get_backend(local=False, simulator=True)
 
@@ -223,11 +229,13 @@ class TestCompiler(QiskitTestCase):
         self.assertIsInstance(result, Result)
 
     @requires_qe_access
-    def test_compile_two_run_remote(self, qe_token, qe_url):
+    def test_compile_two_run_remote(self, qe_tokens, qe_urls):
         """Test Compiler and run two circuits.
 
         If all correct some should exists.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.IBMQ.enable_account(qe_token, qe_url)
         backend = qiskit.IBMQ.get_backend(local=False, simulator=True)
 
@@ -245,11 +253,13 @@ class TestCompiler(QiskitTestCase):
         self.assertIsInstance(result, Result)
 
     @requires_qe_access
-    def test_execute_remote(self, qe_token, qe_url):
+    def test_execute_remote(self, qe_tokens, qe_urls):
         """Test Execute remote.
 
         If all correct some should exists.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.IBMQ.enable_account(qe_token, qe_url)
         backend = qiskit.IBMQ.get_backend(local=False, simulator=True)
 
@@ -265,11 +275,13 @@ class TestCompiler(QiskitTestCase):
         self.assertIsInstance(results, Result)
 
     @requires_qe_access
-    def test_execute_two_remote(self, qe_token, qe_url):
+    def test_execute_two_remote(self, qe_tokens, qe_urls):
         """Test execute two remote.
 
         If all correct some should exists.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.IBMQ.enable_account(qe_token, qe_url)
         backend = qiskit.IBMQ.get_backend(local=False, simulator=True)
 

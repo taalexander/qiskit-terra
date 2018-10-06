@@ -39,8 +39,10 @@ class TestQiskitResult(QiskitTestCase):
         self.assertEqual(self._result1.circuit_statuses(), ['DONE'])
 
     @requires_qe_access
-    def test_ibmq_result_fields(self, qe_token, qe_url):
+    def test_ibmq_result_fields(self, qe_tokens, qe_urls):
         """Test components of a result from a remote simulator."""
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.IBMQ.enable_account(qe_token, qe_url)
         remote_backend = qiskit.IBMQ.get_backend(local=False, simulator=True)
         remote_result = qiskit.execute(self._qc1, remote_backend).result()

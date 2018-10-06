@@ -21,11 +21,13 @@ class TestIbmqQasmSimulator(QiskitTestCase):
     """Test IBM Q Qasm Simulator."""
 
     @requires_qe_access
-    def test_execute_one_circuit_simulator_online(self, qe_token, qe_url):
+    def test_execute_one_circuit_simulator_online(self, qe_tokens, qe_urls):
         """Test execute_one_circuit_simulator_online.
 
         If all correct should return correct counts.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
@@ -44,11 +46,13 @@ class TestIbmqQasmSimulator(QiskitTestCase):
         self.assertDictAlmostEqual(counts, target, threshold)
 
     @requires_qe_access
-    def test_execute_several_circuits_simulator_online(self, qe_token, qe_url):
+    def test_execute_several_circuits_simulator_online(self, qe_tokens, qe_urls):
         """Test execute_several_circuits_simulator_online.
 
         If all correct should return correct counts.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
@@ -80,11 +84,13 @@ class TestIbmqQasmSimulator(QiskitTestCase):
     # https://github.com/Qiskit/qiskit-terra/issues/1016
     @skip('Intermitent failure, see: https://github.com/Qiskit/qiskit-terra/issues/1016 ')
     @requires_qe_access
-    def test_online_qasm_simulator_two_registers(self, qe_token, qe_url):
+    def test_online_qasm_simulator_two_registers(self, qe_tokens, qe_urls):
         """Test online_qasm_simulator_two_registers.
 
         If all correct should return correct counts.
         """
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 

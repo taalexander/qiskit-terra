@@ -42,8 +42,10 @@ class TestCrossSimulation(QiskitTestCase):
             "cpp vs. py statevector has low fidelity{0:.2g}.".format(fidelity))
 
     @requires_qe_access
-    def test_qasm(self, qe_token, qe_url):
+    def test_qasm(self, qe_tokens, qe_urls):
         """counts from a GHZ state"""
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.IBMQ.enable_account(qe_token, qe_url)
         qr = qiskit.QuantumRegister(3)
         cr = qiskit.ClassicalRegister(3)
@@ -94,8 +96,10 @@ class TestCrossSimulation(QiskitTestCase):
         self.assertGreater(fidelity, self._desired_fidelity)
 
     @requires_qe_access
-    def test_qasm_reset_measure(self, qe_token, qe_url):
+    def test_qasm_reset_measure(self, qe_tokens, qe_urls):
         """counts from a qasm program with measure and reset in the middle"""
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         qiskit.IBMQ.enable_account(qe_token, qe_url)
         qr = qiskit.QuantumRegister(3)
         cr = qiskit.ClassicalRegister(3)

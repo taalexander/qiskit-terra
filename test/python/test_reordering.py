@@ -25,8 +25,10 @@ class TestBitReordering(QiskitTestCase):
     """
     @slow_test
     @requires_qe_access
-    def test_basic_reordering(self, qe_token, qe_url):
+    def test_basic_reordering(self, qe_tokens, qe_urls):
         """a simple reordering within a 2-qubit register"""
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         sim, real = self._get_backends(qe_token, qe_url)
         if not sim or not real:
             raise unittest.SkipTest('no remote device available')
@@ -52,8 +54,10 @@ class TestBitReordering(QiskitTestCase):
 
     @slow_test
     @requires_qe_access
-    def test_multi_register_reordering(self, qe_token, qe_url):
+    def test_multi_register_reordering(self, qe_tokens, qe_urls):
         """a more complicated reordering across 3 registers of different sizes"""
+        qe_token = qe_tokens[0]
+        qe_url = qe_urls[0]
         sim, real = self._get_backends(qe_token, qe_url)
         if not sim or real:
             raise unittest.SkipTest('no remote device available')
