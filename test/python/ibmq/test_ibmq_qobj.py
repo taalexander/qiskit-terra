@@ -36,10 +36,10 @@ def once_per_qobj_backend(test):
 
         for qe_token, qe_url in zip(qe_tokens, qe_urls):
             IBMQ.enable_account(qe_token, qe_url)
-            for backend in IBMQ.backends():
-                if backend.configuration()['allow_q_object']:
-                    with self.subTest(backend=backend):
-                        test(self, backend, *args, **kwargs)
+        for backend in IBMQ.backends():
+            if backend.configuration()['allow_q_object']:
+                with self.subTest(backend=backend):
+                    test(self, backend, *args, **kwargs)
     return _wrapper
 
 
