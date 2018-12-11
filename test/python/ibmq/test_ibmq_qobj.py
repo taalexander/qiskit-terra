@@ -23,7 +23,7 @@ from ..common import require_multiple_credentials, JobTestCase, slow_test
 # Timeout duration
 TIMEOUT = int(os.getenv("IBMQ_TESTS_TIMEOUT", 10))
 BLACKLIST = ('ibmq_4_atlantis',)
-ALWAYS_BLACKLISTED = ('QC20','ibmqx_hpc_qasm_simulator')
+ALWAYS_BLACKLISTED = ('QC20', 'ibmqx_hpc_qasm_simulator')
 STATEVECOR_SIMULATORS = ('ibmq_statevector_simulator',)
 
 
@@ -49,6 +49,8 @@ def per_non_blacklisted_backend(blacklist=(), backends_list=None):
             for backend in IBMQ.backends():
                 config = backend.configuration()
                 backend_name = backend.name()
+                allow_q_object = config.allow_q_object
+
                 # Check is specific backends are specified
                 # otherwise passthrough
                 if backends_list is None:
@@ -56,8 +58,9 @@ def per_non_blacklisted_backend(blacklist=(), backends_list=None):
                 else:
                     backend_specified = backend_name in backends_list
 
-                if (config.allow_q_object and backend_name not in blacklist and backend_specified):
-                    with self.subTest(backend=backend_name):
+                if (allow_q_object and backend_name not in blacklist and backend_specified):
+                    with self.subTest(backend_name=backend_name, hub=backend.hub,
+                                      group=backend.group, project=backend.project):
                         tested_backends.append((backend_name, backend.hub,
                                                 backend.group, backend.project))
                         backend_test = test if config.simulator else slow_test(test)
@@ -69,10 +72,18 @@ def per_non_blacklisted_backend(blacklist=(), backends_list=None):
     return per_qobj_backend_decorator
 
 
+# simulators
+ONLY_SIMULATORS = True
+if ONLY_SIMULATORS:
+    simulators = ['ibmq_qasm_simulator']
+else:
+    simulators = None
 # pylint: disable=invalid-name
-per_qobj_backend = per_non_blacklisted_backend(blacklist=ALWAYS_BLACKLISTED)
+per_qobj_backend = per_non_blacklisted_backend(blacklist=ALWAYS_BLACKLISTED,
+                                               backends_list=simulators)
 # pylint: disable=invalid-name
-per_restricted_qobj_backend = per_non_blacklisted_backend(blacklist=ALWAYS_BLACKLISTED+BLACKLIST)
+per_restricted_qobj_backend = per_non_blacklisted_backend(blacklist=ALWAYS_BLACKLISTED+BLACKLIST,
+                                                          backends_list=simulators)
 per_statevector_backend = per_non_blacklisted_backend(backends_list=STATEVECOR_SIMULATORS)
 
 
@@ -123,17 +134,15 @@ class TestBackendQobj(JobTestCase):
         """Test one circuit, one register, in-order readout."""
         config = remote_backend.configuration()
         n_qubits = config.n_qubits
-        if n_qubits < 4:
+        if n_qubits < 2:
             self.skipTest('Backend does not have enough qubits to run test.')
-        qr = QuantumRegister(4)
-        cr = ClassicalRegister(4)
+        qr = QuantumRegister(2)
+        cr = ClassicalRegister(2)
         circ = QuantumCircuit(qr, cr)
         circ.x(qr[0])
-        circ.x(qr[2])
+        circ.x(qr[1])
         circ.measure(qr[0], cr[0])
         circ.measure(qr[1], cr[1])
-        circ.measure(qr[2], cr[2])
-        circ.measure(qr[3], cr[3])
 
         qobj = compile(circ, remote_backend)
         result_remote = remote_backend.run(qobj).result(timeout=TIMEOUT)
@@ -146,17 +155,15 @@ class TestBackendQobj(JobTestCase):
         """Test one circuit, one register, out-of-order readout."""
         config = remote_backend.configuration()
         n_qubits = config.n_qubits
-        if n_qubits < 4:
+        if n_qubits < 2:
             self.skipTest('Backend does not have enough qubits to run test.')
-        qr = QuantumRegister(4)
-        cr = ClassicalRegister(4)
+        qr = QuantumRegister(2)
+        cr = ClassicalRegister(2)
         circ = QuantumCircuit(qr, cr)
         circ.x(qr[0])
-        circ.x(qr[2])
-        circ.measure(qr[0], cr[2])
+        circ.x(qr[1])
+        circ.measure(qr[0], cr[1])
         circ.measure(qr[1], cr[0])
-        circ.measure(qr[2], cr[1])
-        circ.measure(qr[3], cr[3])
 
         qobj_remote = compile(circ, remote_backend)
         qobj_local = compile(circ, self._local_backend)
