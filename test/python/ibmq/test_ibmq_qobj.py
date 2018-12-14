@@ -20,6 +20,8 @@ from qiskit import IBMQ, Aer
 from qiskit.qasm import pi
 
 from ..common import require_multiple_credentials, JobTestCase, slow_test
+# simulators
+ONLY_SIMULATORS = False
 # Timeout duration
 TIMEOUT = int(os.getenv("IBMQ_TESTS_TIMEOUT", 10))
 BLACKLIST = ('ibmq_4_atlantis',)
@@ -72,8 +74,6 @@ def per_non_blacklisted_backend(blacklist=(), backends_list=None):
     return per_qobj_backend_decorator
 
 
-# simulators
-ONLY_SIMULATORS = True
 if ONLY_SIMULATORS:
     simulators = ['ibmq_qasm_simulator']
 else:
