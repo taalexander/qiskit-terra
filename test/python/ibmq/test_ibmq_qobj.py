@@ -16,7 +16,8 @@ import unittest
 import functools
 import numpy as np
 from qiskit import (ClassicalRegister, QuantumCircuit, QuantumRegister, compile)
-from qiskit import IBMQ, Aer
+
+from qiskit import IBMQ, BasicAer
 from qiskit.qasm import pi
 
 from ..common import require_multiple_credentials, JobTestCase, slow_test
@@ -92,8 +93,10 @@ class TestBackendQobj(JobTestCase):
     def setUp(self):
         # pylint: disable=arguments-differ
         super().setUp()
-        self._local_backend = Aer.get_backend('qasm_simulator_py')
-        self._local_statevector_backend = Aer.get_backend('statevector_simulator_py')
+        self._local_backend = BasicAer.get_backend('qasm_simulator_py')
+        self._local_statevector_backend = BasicAer.get_backend('statevector_simulator_py')
+        self.log.info('Local backend: %s', self._local_backend.name())
+        self.log.info('Statevector backend: %s', self._local_statevector_backend.name())
 
     @per_qobj_backend
     def test_operational(self, remote_backend):

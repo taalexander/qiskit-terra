@@ -17,43 +17,12 @@ from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from qiskit.transpiler import PassManager, transpile
 from qiskit import compile
 from qiskit.result import Result
-from qiskit.backends.models import BackendConfiguration
-from qiskit.backends.models.backendconfiguration import GateConfig
 from qiskit import execute
 from qiskit.qiskiterror import QiskitError
 from qiskit.backends.ibmq import least_busy
+from .._mockutils import FakeBackend
 from ..common import QiskitTestCase
 from ..common import requires_qe_access, requires_cpp_simulator
-
-
-class FakeBackend(object):
-    """A fake backend.
-    """
-
-    def name(self):
-        """ name of fake backend"""
-        return 'qiskit_is_cool'
-
-    def configuration(self):
-        """Return a make up configuration for a fake device."""
-        qx5_cmap = [[1, 0], [1, 2], [2, 3], [3, 4], [3, 14], [5, 4], [6, 5],
-                    [6, 7], [6, 11], [7, 10], [8, 7], [9, 8], [9, 10], [11, 10],
-                    [12, 5], [12, 11], [12, 13], [13, 4], [13, 14], [15, 0],
-                    [15, 2], [15, 14]]
-        return BackendConfiguration(
-            backend_name='fake',
-            backend_version='0.0.0',
-            n_qubits=16,
-            basis_gates=['u1', 'u2', 'u3', 'cx', 'id'],
-            simulator=False,
-            local=True,
-            conditional=False,
-            open_pulse=False,
-            memory=False,
-            max_shots=65536,
-            gates=[GateConfig(name='TODO', parameters=[], qasm_def='TODO')],
-            coupling_map=qx5_cmap,
-        )
 
 
 class TestCompiler(QiskitTestCase):
@@ -66,7 +35,7 @@ class TestCompiler(QiskitTestCase):
 
         If all correct some should exists.
         """
-        backend = qiskit.Aer.get_backend('qasm_simulator_py')
+        backend = qiskit.BasicAer.get_backend('qasm_simulator')
 
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
@@ -83,7 +52,7 @@ class TestCompiler(QiskitTestCase):
 
         If all correct some should exists.
         """
-        backend = qiskit.Aer.get_backend('qasm_simulator_py')
+        backend = qiskit.BasicAer.get_backend('qasm_simulator')
 
         qubit_reg = QuantumRegister(2)
         clbit_reg = ClassicalRegister(2)
@@ -104,7 +73,7 @@ class TestCompiler(QiskitTestCase):
 
         If all correct some should exists.
         """
-        backend = qiskit.Aer.get_backend('qasm_simulator_py')
+        backend = qiskit.BasicAer.get_backend('qasm_simulator')
 
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
@@ -122,7 +91,7 @@ class TestCompiler(QiskitTestCase):
 
         If all correct some should exists.
         """
-        backend = qiskit.Aer.get_backend('qasm_simulator_py')
+        backend = qiskit.BasicAer.get_backend('qasm_simulator')
 
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
@@ -141,7 +110,7 @@ class TestCompiler(QiskitTestCase):
 
         If all correct some should exists.
         """
-        backend = qiskit.Aer.get_backend('qasm_simulator_py')
+        backend = qiskit.BasicAer.get_backend('qasm_simulator')
 
         qubit_reg = QuantumRegister(2)
         clbit_reg = ClassicalRegister(2)
@@ -158,7 +127,7 @@ class TestCompiler(QiskitTestCase):
 
         If all correct some should exists.
         """
-        backend = qiskit.Aer.get_backend('qasm_simulator_py')
+        backend = qiskit.BasicAer.get_backend('qasm_simulator')
 
         qubit_reg = QuantumRegister(2)
         clbit_reg = ClassicalRegister(2)
@@ -427,7 +396,7 @@ class TestCompiler(QiskitTestCase):
 
         Pass if the results are correct.
         """
-        backend = qiskit.Aer.get_backend('qasm_simulator_py')
+        backend = qiskit.BasicAer.get_backend('qasm_simulator')
         coupling_map = [[0, 1], [0, 2],
                         [1, 2],
                         [3, 2], [3, 4],
@@ -440,7 +409,7 @@ class TestCompiler(QiskitTestCase):
         # Create a GHZ state
         ghz.h(qr[0])
         for i in range(4):
-            ghz.cx(qr[i], qr[i+1])
+            ghz.cx(qr[i], qr[i + 1])
         # Insert a barrier before measurement
         ghz.barrier()
         # Measure all of the qubits in the standard basis
@@ -461,7 +430,7 @@ class TestCompiler(QiskitTestCase):
         bell_result = backend.run(bell_qobj).result()
         ghz_result = backend.run(ghz_qobj).result()
 
-        threshold = 0.04 * shots
+        threshold = 0.05 * shots
         counts_bell = bell_result.get_counts()
         target_bell = {'00000': shots / 2, '00011': shots / 2}
         self.assertDictAlmostEqual(counts_bell, target_bell, threshold)
@@ -475,7 +444,7 @@ class TestCompiler(QiskitTestCase):
         If all correct should return data with the same stats. The circuit may
         be different.
         """
-        backend = qiskit.Aer.get_backend('qasm_simulator_py')
+        backend = qiskit.BasicAer.get_backend('qasm_simulator')
 
         qr = QuantumRegister(3, 'qr')
         cr = ClassicalRegister(3, 'cr')
@@ -486,7 +455,7 @@ class TestCompiler(QiskitTestCase):
         qc.measure(qr[0], cr[0])
         qc.measure(qr[1], cr[1])
         qc.measure(qr[2], cr[2])
-        shots = 1024
+        shots = 2048
         coupling_map = [[0, 1], [1, 2]]
         initial_layout = {("qr", 0): ("q", 0), ("qr", 1): ("q", 1),
                           ("qr", 2): ("q", 2)}
@@ -500,7 +469,7 @@ class TestCompiler(QiskitTestCase):
 
         counts = result.get_counts(qc)
         target = {'000': shots / 2, '111': shots / 2}
-        threshold = 0.04 * shots
+        threshold = 0.05 * shots
         self.assertDictAlmostEqual(counts, target, threshold)
 
     @requires_cpp_simulator
@@ -509,7 +478,7 @@ class TestCompiler(QiskitTestCase):
 
         Uses the mapper. Pass if results are correct.
         """
-        backend = qiskit.Aer.get_backend('qasm_simulator')
+        backend = qiskit.LegacySimulators.get_backend('qasm_simulator')
         coupling_map = [[0, 1], [0, 8], [1, 2], [1, 9], [2, 3], [2, 10],
                         [3, 4], [3, 11], [4, 5], [4, 12], [5, 6], [5, 13],
                         [6, 7], [6, 14], [7, 15], [8, 9], [9, 10], [10, 11],
@@ -518,21 +487,21 @@ class TestCompiler(QiskitTestCase):
         n = 3  # make this at least 3
         qr0 = QuantumRegister(n)
         qr1 = QuantumRegister(n)
-        ans = ClassicalRegister(2*n)
+        ans = ClassicalRegister(2 * n)
         qc = QuantumCircuit(qr0, qr1, ans)
         # Set the first bit of qr0
         qc.x(qr0[0])
         # Swap the set bit
-        qc.swap(qr0[0], qr0[n-1])
-        qc.swap(qr0[n-1], qr1[n-1])
-        qc.swap(qr1[n-1], qr0[1])
+        qc.swap(qr0[0], qr0[n - 1])
+        qc.swap(qr0[n - 1], qr1[n - 1])
+        qc.swap(qr1[n - 1], qr0[1])
         qc.swap(qr0[1], qr1[1])
         # Insert a barrier before measurement
         qc.barrier()
         # Measure all of the qubits in the standard basis
         for j in range(n):
             qc.measure(qr0[j], ans[j])
-            qc.measure(qr1[j], ans[j+n])
+            qc.measure(qr1[j], ans[j + n])
         # First version: no mapping
         result = execute(qc, backend=backend,
                          coupling_map=None, shots=1024,
@@ -567,7 +536,7 @@ class TestCompiler(QiskitTestCase):
         qc.u1(3.14, qr[0])
         qc.u2(3.14, 1.57, qr[0])
         qc.measure(qr, cr)
-        backend = qiskit.Aer.get_backend('qasm_simulator_py')
+        backend = qiskit.BasicAer.get_backend('qasm_simulator')
         rtrue = execute(qc, backend, seed=42).result()
         rfalse = execute(qc, backend, seed=42, pass_manager=PassManager()).result()
         self.assertEqual(rtrue.get_counts(), rfalse.get_counts())

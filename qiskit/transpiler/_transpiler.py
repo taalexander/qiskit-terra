@@ -12,23 +12,22 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.csgraph as cs
 
-from qiskit.qiskiterror import QiskitError
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit import QuantumRegister
-from qiskit.mapper import (Coupling, optimize_1q_gates, swap_mapper,
-                           cx_cancellation, direction_mapper,
+from qiskit.mapper import (Coupling, swap_mapper, cx_cancellation, direction_mapper,
                            remove_last_measurements, return_last_measurements)
+from qiskit.tools.parallel import parallel_map
 from qiskit.converters import circuit_to_dag
 from qiskit.converters import dag_to_circuit
-from ._parallel import parallel_map
+from qiskit.transpiler.passes.optimize_1q_gates import Optimize1qGates
 from .passes.mapping.unroller import Unroller
-
+from ._transpilererror import TranspilerError
 
 logger = logging.getLogger(__name__)
 
 
-def transpile(circuits, backend, basis_gates=None, coupling_map=None, initial_layout=None,
-              seed_mapper=None, pass_manager=None):
+def transpile(circuits, backend=None, basis_gates=None, coupling_map=None,
+              initial_layout=None, seed_mapper=None, pass_manager=None):
     """transpile one or more circuits.
 
     Args:
@@ -38,28 +37,30 @@ def transpile(circuits, backend, basis_gates=None, coupling_map=None, initial_la
         coupling_map (list): coupling map (perhaps custom) to target in mapping
         initial_layout (list): initial layout of qubits in mapping
         seed_mapper (int): random seed for the swap_mapper
-        pass_manager (PassManager): a pass_manager for the transpiler stage
+        pass_manager (PassManager): a pass_manager for the transpiler stages
 
     Returns:
         QuantumCircuit or list[QuantumCircuit]: transpiled circuit(s).
+
+    Raises:
+        TranspilerError: if args are not complete for the transpiler to function
     """
     return_form_is_single = False
     if isinstance(circuits, QuantumCircuit):
         circuits = [circuits]
         return_form_is_single = True
 
-    # FIXME: THIS NEEDS TO BE CLEANED UP -- some things to decide for list of circuits:
-    # 1. do all circuits have same coupling map?
-    # 2. do all circuit have the same basis set?
-    # 3. do they all have same registers etc?
     # Check for valid parameters for the experiments.
     basis_gates = basis_gates or ','.join(backend.configuration().basis_gates)
     coupling_map = coupling_map or getattr(backend.configuration(),
                                            'coupling_map', None)
 
+    if not basis_gates:
+        raise TranspilerError('no basis_gates or backend to compile to')
+
     circuits = parallel_map(_transpilation, circuits,
-                            task_args=(backend,),
-                            task_kwargs={'basis_gates': basis_gates,
+                            task_kwargs={'backend': backend,
+                                         'basis_gates': basis_gates,
                                          'coupling_map': coupling_map,
                                          'initial_layout': initial_layout,
                                          'seed_mapper': seed_mapper,
@@ -69,7 +70,7 @@ def transpile(circuits, backend, basis_gates=None, coupling_map=None, initial_la
     return circuits
 
 
-def _transpilation(circuit, backend, basis_gates=None, coupling_map=None,
+def _transpilation(circuit, backend=None, basis_gates=None, coupling_map=None,
                    initial_layout=None, seed_mapper=None,
                    pass_manager=None):
     """Perform transpilation of a single circuit.
@@ -86,8 +87,13 @@ def _transpilation(circuit, backend, basis_gates=None, coupling_map=None,
     Returns:
         QuantumCircuit: A transpiled circuit.
 
+    Raises:
+        TranspilerError: if args are not complete for transpiler to function.
     """
     dag = circuit_to_dag(circuit)
+    if not backend and not initial_layout:
+        raise TranspilerError('initial layout not supplied, and cannot '
+                              'be inferred from backend.')
     if (initial_layout is None and not backend.configuration().simulator
             and not _matches_coupling_map(dag, coupling_map)):
         initial_layout = _pick_best_layout(dag, backend)
@@ -174,7 +180,7 @@ def transpile_dag(dag, basis_gates='u1,u2,u3,cx,id', coupling_map=None,
             logger.info("pre-mapping properties: %s",
                         dag.properties())
             # Insert swap gates
-            coupling = Coupling(Coupling.coupling_list2dict(coupling_map))
+            coupling = Coupling(couplinglist=coupling_map)
             removed_meas = remove_last_measurements(dag)
             logger.info("measurements moved: %s", removed_meas)
             logger.info("initial layout: %s", initial_layout)
@@ -187,8 +193,10 @@ def transpile_dag(dag, basis_gates='u1,u2,u3,cx,id', coupling_map=None,
             dag = direction_mapper(dag, coupling)
             # Simplify cx gates
             cx_cancellation(dag)
+            # Unroll to the basis
+            dag = Unroller(['u1', 'u2', 'u3', 'id', 'cx']).run(dag)
             # Simplify single qubit gates
-            dag = optimize_1q_gates(dag)
+            dag = Optimize1qGates().run(dag)
             return_last_measurements(dag, removed_meas,
                                      last_layout)
             logger.info("post-mapping properties: %s",
@@ -217,16 +225,16 @@ def _best_subset(backend, n_qubits):
                 connectivity mapping.
 
     Raises:
-        QiskitError: Wrong number of qubits given.
+        TranspilerError: Wrong number of qubits given.
     """
     if n_qubits == 1:
         return np.array([0])
     elif n_qubits <= 0:
-        raise QiskitError('Number of qubits <= 0.')
+        raise TranspilerError('Number of qubits <= 0.')
 
     device_qubits = backend.configuration().n_qubits
     if n_qubits > device_qubits:
-        raise QiskitError('Number of qubits greater than device.')
+        raise TranspilerError('Number of qubits greater than device.')
 
     cmap = np.asarray(getattr(backend.configuration(), 'coupling_map', None))
     data = np.ones_like(cmap[:, 0])

@@ -18,11 +18,16 @@ from ._transpilererror import TranspilerError
 class PassManager():
     """ A PassManager schedules the passes """
 
-    def __init__(self, ignore_requires=None, ignore_preserves=None, max_iteration=None):
+    def __init__(self, passes=None,
+                 ignore_requires=None,
+                 ignore_preserves=None,
+                 max_iteration=None):
         """
         Initialize an empty PassManager object (with no passes scheduled).
 
         Args:
+            passes (list[BasePass] or BasePass): pass(es) to be added to schedule. The default is
+                None.
             ignore_requires (bool): The schedule ignores the requires field in the passes. The
                 default setting in the pass is False.
             ignore_preserves (bool): The schedule ignores the preserves field in the passes. The
@@ -31,7 +36,7 @@ class PassManager():
                 max_iteration is reached.
         """
         # the pass manager's schedule of passes, including any control-flow.
-        # Populated via PassManager.add_passes().
+        # Populated via PassManager.append().
         self.working_list = []
 
         # global property set is the context of the circuit held by the pass manager
@@ -47,10 +52,12 @@ class PassManager():
         self.passmanager_options = {'ignore_requires': ignore_requires,
                                     'ignore_preserves': ignore_preserves,
                                     'max_iteration': max_iteration}
+        if passes is not None:
+            self.append(passes)
 
     def _join_options(self, passset_options):
         """ Set the options of each passset, based on precedence rules:
-        passset options (set via ``PassManager.add_passes()``) override
+        passset options (set via ``PassManager.append()``) override
         passmanager options (set via ``PassManager.__init__()``), which override Default.
         .
         """
@@ -62,8 +69,8 @@ class PassManager():
         passset_level = {k: v for k, v in passset_options.items() if v is not None}
         return {**default, **passmanager_level, **passset_level}
 
-    def add_passes(self, passes, ignore_requires=None, ignore_preserves=None, max_iteration=None,
-                   **flow_controller_conditions):
+    def append(self, passes, ignore_requires=None, ignore_preserves=None, max_iteration=None,
+               **flow_controller_conditions):
         """
         Args:
             passes (list[BasePass] or BasePass): pass(es) to be added to schedule
