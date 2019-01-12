@@ -267,8 +267,8 @@ class TestBackendQobj(QiskitTestCase):
         circ2.measure(qr1[0], cr1[0])
         circ2.measure(qr1[0], cr2[0])
         qobj = compile([circ1, circ2], remote_backend)
-        result_remote = remote_backend.run(qobj).result(timeout=TIMEOUT)
         result_local = self._local_backend.run(qobj).result()
+        result_remote = remote_backend.run(qobj).result(timeout=TIMEOUT)
         self.assertDictAlmostEqual(result_remote.get_counts(circ1),
                                    result_local.get_counts(circ1), delta=100)
         self.assertDictAlmostEqual(result_remote.get_counts(circ2),
