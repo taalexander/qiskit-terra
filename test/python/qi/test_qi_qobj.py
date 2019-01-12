@@ -250,6 +250,31 @@ class TestBackendQobj(QiskitTestCase):
                                    result_local.get_counts(circ), delta=100)
 
     @per_qobj_backend
+    def test_multiple_target(self, remote_backend):
+        """Test measuring more than once from a qubit or into a single register."""
+        config = remote_backend.configuration()
+        n_qubits = config.n_qubits
+        if n_qubits < 1:
+            self.skipTest('Backend does not have enough qubits to run test.')
+        qr1 = QuantumRegister(1)
+        qr2 = QuantumRegister(1)
+        cr1 = ClassicalRegister(1)
+        cr2 = ClassicalRegister(1)
+        circ1 = QuantumCircuit(qr1, qr2, cr1, cr2)
+        circ1.measure(qr1[0], cr1[0])
+        circ1.measure(qr2[0], cr1[0])
+        circ2 = QuantumCircuit(qr1, qr2, cr1, cr2)
+        circ2.measure(qr1[0], cr1[0])
+        circ2.measure(qr1[0], cr2[0])
+        qobj = compile([circ1, circ2], remote_backend)
+        result_remote = remote_backend.run(qobj).result(timeout=TIMEOUT)
+        result_local = self._local_backend.run(qobj).result()
+        self.assertDictAlmostEqual(result_remote.get_counts(circ1),
+                                   result_local.get_counts(circ1), delta=100)
+        self.assertDictAlmostEqual(result_remote.get_counts(circ2),
+                                   result_local.get_counts(circ2), delta=100)
+
+    @per_qobj_backend
     def test_ry_circuit(self, remote_backend):
         """Test Atlantis staging device deterministic ry operation."""
         config = remote_backend.configuration()
