@@ -23,6 +23,10 @@ The format is based on `Keep a Changelog`_.
 Added
 -----
 
+
+- New EnlargeWithAncilla pass for adding ancilla qubits after a Layout
+  selection pass (#1603).
+- New Unroll2Q pass for unrolling gates down to just 1q or 2q gates (#1614). 
 - Added a RunConfig object for configurations for run configurations to be used 
   in compile and circuits_to_qobj. (#1629)
 - Added support for register slicing when applying operations to a register (#1643).
@@ -57,6 +61,7 @@ Fixed
 
 - Fixed a bug with measurement sampling optimization in BasicAer
   qasm_simulator (#1624).
+- Fixed a bug where barriers didn't plot over all qubits when using matplotlib (#1718).
 - Fixed a minor conda env bug in Makefile (#1691).
 - Fixed a bug in BasicMapper pass operating over multiple registers (#1611).
 - Fixed a bug in BarrierBeforeFinalMeasurements which incorrectly moved measurements
@@ -90,6 +95,8 @@ Removed
 - Removed ``QISKitError`` in favour of ``QiskitError``. (#1684)
 - The IBMQ provider (``qiskit.providers.ibmq``) has been moved to its own
   package (``pip install qiskit-ibmq-provider``). (#1700)
+- ``compiled_circuit_qasm`` has been removed from the Qobj header, since it
+  was part of the pre-qobj specification (#1715).
 
 `0.7.0`_ - 2018-12-19
 =====================
@@ -138,8 +145,6 @@ Added
 - New CXDirection pass for fixing the direction of cx gates (#1410).
 - New CheckMap pass for checking if circuit meets mapping requirements (#1433).
 - New Optimize1QGate pass for combining chains of 1q rotations (#1442).
-- New EnlargeWithAncilla pass for adding ancilla qubits after a Layout
-  selection pass (#1603).
 
 
 Changed
