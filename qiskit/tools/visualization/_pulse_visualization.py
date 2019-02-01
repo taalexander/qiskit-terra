@@ -34,8 +34,8 @@ def pulse_drawer(samples, filename=None, dpi=150, nop=1000, size=(6, 5)):
         raise ImportError('pulse_drawer need matplotlib. '
                           'Run "pip install matplotlib" before.')
 
-    re_y = samples[:, 0]
-    im_y = samples[:, 1]
+    re_y = np.real(samples)
+    im_y = np.imag(samples)
     time = np.linspace(0, len(samples)-1, len(samples))
 
     # spline interpolation

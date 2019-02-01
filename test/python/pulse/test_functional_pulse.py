@@ -12,7 +12,7 @@
 import numpy as np
 
 
-from qiskit.pulse.functional_pulse import FunctionalPulse
+from qiskit.pulse.commands.functional_pulse import FunctionalPulse
 from qiskit.test import QiskitTestCase
 
 

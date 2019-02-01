@@ -8,7 +8,7 @@
 # pylint: disable=invalid-name,missing-docstring,missing-param-doc
 
 """
-Pulse envelope generation.
+Functional Pulse
 """
 
 import warnings
@@ -17,13 +17,14 @@ from inspect import signature
 import numpy as np
 
 from qiskit.exceptions import QiskitError
+from qiskit.pulse.commands.sample_pulse import SamplePulse
 
 
 class FunctionalPulse:
-    """Pulse specification."""
+    """Functional pulse decorator"""
 
     def __init__(self, pulse):
-        """Register pulse envelope function.
+        """Decorate pulse envelope function.
 
         Args:
             pulse (callable): a function describing pulse envelope
@@ -33,31 +34,31 @@ class FunctionalPulse:
 
         if callable(pulse):
             sig = signature(pulse)
-            if 'width' in sig.parameters:
+            if 'duration' in sig.parameters:
                 self.pulse = pulse
             else:
-                raise QiskitError('Pulse function requires "width" argument.')
+                raise QiskitError('Pulse function requires "duration" argument.')
         else:
             raise QiskitError('Pulse function is not callable.')
 
-    def __call__(self, width, **kwargs):
+    def __call__(self, duration, **kwargs):
         """Return Functional Pulse with methods
         """
-        return _FunctionalPulse(self.pulse, width=width, **kwargs)
+        return _FunctionalPulse(self.pulse, duration=duration, **kwargs)
 
 
 class _FunctionalPulse:
-    """Pulse specification with methods."""
+    """Sample Pulse generation from functional pulse."""
 
-    def __init__(self, pulse, width, **kwargs):
-        """ Generate new pulse instance
+    def __init__(self, pulse, duration, **kwargs):
+        """ Generate new functional pulse
 
         Args:
             pulse (callable): a function describing pulse envelope
-            width (float): pulse width
+            duration (float): pulse duration
         """
         self.pulse = pulse
-        self.width = width
+        self.duration = duration
         self._params = kwargs
 
     @property
@@ -87,44 +88,21 @@ class _FunctionalPulse:
     def tolist(self):
         """Output pulse envelope as a list of complex values
 
+        Parameters:
+            name (str): name of pulse
+
         Returns:
             list: complex pulse envelope at each sampling point
         Raises:
             QiskitError: when pulse envelope is not a number
         """
 
-        def _cmp2list(val):
-            if isinstance(val, complex):
-                re_v = np.real(val)
-                im_v = np.imag(val)
-            elif isinstance(val, (float, int, np.integer)):
-                re_v = float(val)
-                im_v = 0.0
-            else:
-                raise QiskitError('Pulse envelope should be numbers.')
+        samples = self.pulse(self.duration, **self._params)
 
-            if np.sqrt(re_v ** 2 + im_v ** 2) > 1:
-                warnings.warn('Pulse amplitude exceeds 1.')
+        if any(abs(samples) > 1):
+            warnings.warn("Pulse amplitude exceeds 1")
+            _samples = np.where(abs(samples) > 1, samples/abs(samples), samples)
+        else:
+            _samples = samples
 
-            return [re_v, im_v]
-
-        smp = list(map(_cmp2list, self.pulse(self.width, **self._params)))
-
-        return smp
-
-    def plot(self, interactive=False, **kwargs):
-        """Visualize pulse envelope
-
-        Args:
-            interactive (bool): when set true show the circuit in a new window
-        Returns:
-            matplotlib.figure: a matplotlib figure object for the pulse envelope
-        """
-        from qiskit.tools.visualization._pulse_visualization import pulse_drawer
-
-        image = pulse_drawer(np.array(self.tolist()), **kwargs)
-
-        if image and interactive:
-            image.show()
-
-        return image
+        return SamplePulse(_samples)
