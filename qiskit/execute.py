@@ -22,7 +22,7 @@ import warnings
 from qiskit.compiler import RunConfig, TranspileConfig
 from qiskit.compiler import assemble_circuits, assemble_schedules, transpile
 from qiskit.exceptions import QiskitError
-from qiskit.pulse import Schedule, ConfiguredSchedule, ScheduleConfig
+from qiskit.pulse import Schedule, ConditionedSchedule, UserLoDict
 from qiskit.qobj import QobjHeader
 
 logger = logging.getLogger(__name__)
@@ -135,13 +135,13 @@ def execute_circuits(circuits, backend, qobj_header=None,
     return backend.run(qobj, **kwargs)
 
 
-def execute_schedules(schedules, backend, schedule_configs=None, **kwargs):
+def execute_schedules(schedules, backend, user_lo_dicts=None, **kwargs):
     """Executes a list of circuits.
 
     Args:
         schedules (Schedule or list[Schedule]): schedules to execute
         backend (BaseBackend): a backend to execute the schedules on
-        schedule_configs (ScheduleConfig or list[ScheduleConfig]): Configuration for schedules
+        user_lo_dicts (UserLoDict or list[UserLoDict]): Dictionaries of user LO frequencies
 
     Keyword Args:
         shots (int): number of repetitions of each circuit, for sampling
@@ -164,19 +164,20 @@ def execute_schedules(schedules, backend, schedule_configs=None, **kwargs):
     if isinstance(schedules, Schedule):
         schedules = [schedules]
 
-    if schedule_configs:
-        if isinstance(schedule_configs, ScheduleConfig):
-            schedule_configs = [schedule_configs]
-        if len(schedules) == len(schedule_configs):
-            experiments = [ConfiguredSchedule(i, j) for i, j in zip(schedules, schedule_configs)]
-        elif len(schedules) == 1:
-            experiments = [ConfiguredSchedule(schedules[0], conf) for conf in schedule_configs]
-        elif len(schedule_configs) == 1:
-            experiments = [ConfiguredSchedule(sched, schedule_configs[0]) for sched in schedules]
+    if user_lo_dicts:
+        if isinstance(user_lo_dicts, UserLoDict):
+            user_lo_dicts = [user_lo_dicts]
+        if len(schedules) == 1:
+            experiments = [ConditionedSchedule(schedules[0], cond) for cond in user_lo_dicts]
+        elif len(user_lo_dicts) == 1:
+            experiments = [ConditionedSchedule(sched, user_lo_dicts[0]) for sched in schedules]
         else:
-            raise QiskitError("#schedules : #schedule_configs must be n:n, 1:n or n:1.")
+            # n schedules * m user_lo_dicts == n * m ConditionedSchedule
+            experiments = [ConditionedSchedule(sched, cond)
+                           for sched in schedules for cond in user_lo_dicts]
     else:
-        experiments = [ConfiguredSchedule(sched) for sched in schedules]
+        # no user condition
+        experiments = [ConditionedSchedule(sched) for sched in schedules]
 
     backend_config = backend.configuration()
 

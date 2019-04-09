@@ -9,5 +9,5 @@
 from qiskit.pulse.commands import (Acquire, FrameChange, PersistentValue,
                                    SamplePulse, Snapshot,
                                    Kernel, Discriminator, functional_pulse)
-from qiskit.pulse.schedule import Schedule
+from qiskit.pulse.schedule import Schedule, ConditionedSchedule, UserLoDict
 from qiskit.pulse.channels import DeviceSpecification
