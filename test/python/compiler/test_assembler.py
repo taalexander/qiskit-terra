@@ -20,7 +20,6 @@ from qiskit.compiler import assemble_schedules
 from qiskit.qobj import PulseQobj
 from qiskit.qobj import QasmQobj
 from qiskit.test import QiskitTestCase
-from qiskit.test.reference_pulses import ReferenceSchedules
 
 
 class TestAssembler(QiskitTestCase):
@@ -117,7 +116,25 @@ class TestAssembler(QiskitTestCase):
     def test_assemble_single_schedule(self):
         """Test assembling a single schedule.
         """
-        schedule = ReferenceSchedules.nonsense()
+        @pulse.functional_pulse
+        def linear(duration: int):
+            x = np.arange(0, duration)
+            return 0.2 * x + 0.1
+
+        lp0 = linear(duration=3, name='pulse0')
+
+        qubits = [
+            pulse.channels.Qubit(0,
+                                 drive_channels=[pulse.channels.DriveChannel(0)],
+                                 acquire_channels=[pulse.channels.AcquireChannel(0)]),
+        ]
+        registers = [pulse.channels.RegisterSlot(i) for i in range(1)]
+        device = pulse.DeviceSpecification(qubits, registers)
+
+        schedule = pulse.Schedule()\
+            .insert(0, lp0(device.q[0].drive))\
+            .insert(3, pulse.Acquire(10)(device.q[0], device.mem[0]))
+
         config = {
             'shots': 2000,
             'qubit_lo_freq': [],
@@ -127,7 +144,7 @@ class TestAssembler(QiskitTestCase):
             'memory_slot_size': 100,
             'rep_time': 1000
         }
-        qobj = assemble_schedules(pulse.schedule.ConfiguredSchedule(schedule),
+        qobj = assemble_schedules(pulse.schedule.ConditionedSchedule(schedule),
                                   dict_header={},
                                   dict_config=config)
         self.assertIsInstance(qobj, PulseQobj)
