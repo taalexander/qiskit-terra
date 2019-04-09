@@ -11,9 +11,9 @@ Sample pulse.
 import numpy as np
 
 from qiskit.pulse.channels import OutputChannel
-from qiskit.pulse.common.command_schedule import PrimitiveInstruction
 from qiskit.pulse.common.timeslots import Interval, Timeslot, TimeslotOccupancy
 from qiskit.pulse.exceptions import PulseError
+from .instruction import Instruction
 from .pulse_command import PulseCommand
 
 
@@ -36,7 +36,11 @@ class SamplePulse(PulseCommand):
         if np.any(np.abs(samples) > 1):
             raise PulseError('Absolute value of pulse envelope amplitude exceeds 1.')
 
-        self.samples = samples
+        self._samples = samples
+
+    @property
+    def samples(self):
+        return self._samples
 
     def draw(self, **kwargs):
         """Plot the interpolated envelope of pulse.
@@ -54,7 +58,7 @@ class SamplePulse(PulseCommand):
         """
         from qiskit.tools.visualization import pulse_drawer
 
-        return pulse_drawer(self.samples, self.duration, **kwargs)
+        return pulse_drawer(self._samples, self.duration, **kwargs)
 
     def __eq__(self, other):
         """Two SamplePulses are the same if they are of the same type
@@ -66,11 +70,13 @@ class SamplePulse(PulseCommand):
         Returns:
             bool: are self and other equal.
         """
-        if type(self) is type(other) and \
-                self.name == other.name and \
-                (self.samples == other.samples).all():
+        if super().__eq__(other) and \
+                (self._samples == other._samples).all():
             return True
         return False
+
+    def __hash__(self):
+        return hash((super().__hash__(), self._samples.tostring()))
 
     def __repr__(self):
         return '%s(%s, duration=%d)' % (self.__class__.__name__, self.name, self.duration)
@@ -78,30 +84,14 @@ class SamplePulse(PulseCommand):
     def __call__(self, channel: OutputChannel) -> 'DriveInstruction':
         return DriveInstruction(self, channel)
 
-    def __rshift__(self, channel: OutputChannel) -> 'DriveInstruction':
-        return DriveInstruction(self, channel)
 
+class DriveInstruction(Instruction):
+    """Instruction to drive a pulse to an `OutputChannel`. """
 
-class DriveInstruction(PrimitiveInstruction):
-    """Pulse to drive a pulse shape to a `OutputChannel`. """
-
-    def __init__(self, command: SamplePulse, channel: OutputChannel):
-        self._command = command
+    def __init__(self, command: SamplePulse, channel: OutputChannel, begin_time: int = 0):
+        slots = [Timeslot(Interval(begin_time, begin_time+command.duration), channel)]
+        super().__init__(command, begin_time, TimeslotOccupancy(slots))
         self._channel = channel
-        self._occupancy = TimeslotOccupancy([Timeslot(Interval(0, command.duration), channel)])
-
-    @property
-    def duration(self):
-        return self._command.duration
-
-    @property
-    def occupancy(self):
-        return self._occupancy
-
-    @property
-    def command(self) -> SamplePulse:
-        """SamplePulse command. """
-        return self._command
 
     @property
     def channel(self) -> OutputChannel:
@@ -109,4 +99,4 @@ class DriveInstruction(PrimitiveInstruction):
         return self._channel
 
     def __repr__(self):
-        return '%s >> %s' % (self._command, self._channel)
+        return '%4d: %s -> %s' % (self._begin_time, self._command, self._channel)
