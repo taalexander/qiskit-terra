@@ -9,6 +9,8 @@
 Persistent value.
 """
 
+from typing import Dict, Any
+
 from qiskit.pulse.channels import OutputChannel
 from qiskit.pulse.common.timeslots import Interval, Timeslot, TimeslotCollection
 from qiskit.pulse.exceptions import PulseError
@@ -74,6 +76,16 @@ class PersistentValueInstruction(Instruction):
     def channel(self) -> OutputChannel:
         """OutputChannel channel."""
         return self._channel
+
+    @property
+    def to_dict(self) -> Dict[str, Any]:
+        """Return PersistentValue Qobj."""
+        return {
+            'name': 'pv',
+            't0': self._begin_time,
+            'ch': self._channel.name,
+            'val': self._command.value
+        }
 
     def __repr__(self):
         return '%4d: %s -> %s' % (self._start_time, self._command, self._channel)
