@@ -8,7 +8,7 @@
 """
 Acquire.
 """
-from typing import Union, List
+from typing import Union, List, Dict, Any
 
 from qiskit.pulse.channels import Qubit, MemorySlot, RegisterSlot
 from qiskit.pulse.common.timeslots import Interval, Timeslot, TimeslotOccupancy
@@ -119,6 +119,17 @@ class AcquireInstruction(Instruction):
     def command(self) -> Acquire:
         """Acquire command. """
         return self._command
+
+    @property
+    def to_dict(self) -> Dict[str, Any]:
+        """Return FrameChange Qobj."""
+        return {
+            'name': 'acquire',
+            't0': self._begin_time,
+            'duration': self._command.duration,
+            'qubits': [q.index for q in self._qubits],
+            'memory_slot': [m.index for m in self._mem_slots]
+        }
 
     @property
     def qubits(self):

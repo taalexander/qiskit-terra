@@ -9,6 +9,7 @@
 Sample pulse.
 """
 import numpy as np
+from typing import Dict, Any
 
 from qiskit.pulse.channels import OutputChannel
 from qiskit.pulse.common.timeslots import Interval, Timeslot, TimeslotOccupancy
@@ -29,8 +30,6 @@ class SamplePulse(PulseCommand):
         Raises:
             PulseError: when pulse envelope amplitude exceeds 1.
         """
-        name = name or str('pulse_object_%s' % id(self))
-
         super().__init__(duration=len(samples), name=name)
 
         if np.any(np.abs(samples) > 1):
@@ -102,6 +101,15 @@ class DriveInstruction(Instruction):
     def channel(self) -> OutputChannel:
         """OutputChannel command. """
         return self._channel
+
+    @property
+    def to_dict(self) -> Dict[str, Any]:
+        """Return SamplePulse Qobj."""
+        return {
+            'name': self._command.name,
+            't0': self._begin_time,
+            'ch': self._channel.name
+        }
 
     def __repr__(self):
         return '%4d: %s -> %s' % (self._begin_time, self._command, self._channel)

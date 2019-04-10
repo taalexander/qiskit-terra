@@ -9,7 +9,7 @@
 ScheduleComponent = Common interface for components of schedule (Instruction and Schedule).
 """
 from abc import ABCMeta, abstractmethod
-from typing import Tuple
+from typing import Tuple, Dict, Any
 
 from .timeslots import TimeslotOccupancy
 
@@ -57,4 +57,10 @@ class ScheduleComponent(metaclass=ABCMeta):
     @abstractmethod
     def children(self) -> Tuple['ScheduleComponent', ...]:
         """Child nodes of this schedule component. """
+        pass
+
+    @property
+    @abstractmethod
+    def to_dict(self) -> Dict[str, Any]:
+        """Dictionary to generate PulseQobjInstruction."""
         pass

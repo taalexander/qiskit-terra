@@ -14,10 +14,8 @@ import sympy
 
 from qiskit.circuit.quantumcircuit import QuantumCircuit
 from qiskit.compiler.run_config import RunConfig
-from qiskit.exceptions import QiskitError
 from qiskit.pulse import ConditionedSchedule, UserLoDict
-from qiskit.pulse.commands import (DriveInstruction, FrameChangeInstruction,
-                                   PersistentValueInstruction, AcquireInstruction, Snapshot)
+from qiskit.pulse.commands import AcquireInstruction, DriveInstruction
 from qiskit.qobj import (QasmQobj, PulseQobj, QobjExperimentHeader, QobjHeader,
                          QasmQobjInstruction, QasmQobjExperimentConfig, QasmQobjExperiment,
                          QasmQobjConfig, QobjConditional,
@@ -196,48 +194,14 @@ def assemble_schedules(schedules, dict_config, dict_header):
 
         commands = []
         for instruction in conditioned.schedule.flat_instruction_sequence():
+            # TODO: support conditional gate
+            current_command = PulseQobjInstruction(**instruction.to_dict)
+
             if isinstance(instruction, DriveInstruction):
-                # Sample pulses
-                # required: `ch`
-                # optional:
-                current_command = PulseQobjInstruction(
-                    name=instruction.command.name,
-                    t0=instruction.begin_time,
-                    ch=instruction.channel.name
-                )
-                # TODO: support conditional gate
+                # add samples to pulse library
                 user_pulselib.add(instruction.command)
-            elif isinstance(instruction, FrameChangeInstruction):
-                # Frame change
-                # required: `ch`, `phase`
-                # optional:
-                current_command = PulseQobjInstruction(
-                    name='fc',
-                    t0=instruction.begin_time,
-                    ch=instruction.channel.name,
-                    phase=instruction.command.phase
-                )
-            elif isinstance(instruction, PersistentValueInstruction):
-                # Persistent value
-                # required: `ch`, `val`
-                # optional:
-                current_command = PulseQobjInstruction(
-                    name='pv',
-                    t0=instruction.begin_time,
-                    ch=instruction.channel.name,
-                    val=instruction.command.value
-                )
-            elif isinstance(instruction, AcquireInstruction):
-                # Acquire
-                # required: `duration`, `qubits`, `memory_slot`
-                # optional: `discriminators`, `kernels`, `register_slot`
-                current_command = PulseQobjInstruction(
-                    name='acquire',
-                    t0=instruction.begin_time,
-                    duration=instruction.command.duration,
-                    qubits=[q.index for q in instruction.qubits],
-                    memory_slot=[mems.index for mems in instruction.mem_slots]
-                )
+
+            if isinstance(instruction, AcquireInstruction):
                 # add optional fields
                 meas_level = dict_config.get('meas_level', 2)
                 if meas_level == 2:
@@ -259,19 +223,6 @@ def assemble_schedules(schedules, dict_config, dict_header):
                         current_command.kernels = [qobj_kernel]
                     else:
                         current_command.kernels = []
-            elif isinstance(instruction, Snapshot):
-                # Snapshot
-                # required: `label`, `type`
-                # optional:
-                current_command = PulseQobjInstruction(
-                    name='snapshot',
-                    t0=instruction.begin_time,
-                    label=instruction.label,
-                    type=instruction.type
-                )
-            else:
-                raise QiskitError('Invalid instruction is given, %s'
-                                  % instruction.__class__.__name__)
 
             commands.append(current_command)
 

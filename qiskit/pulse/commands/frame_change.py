@@ -9,6 +9,8 @@
 Frame change pulse.
 """
 
+from typing import Dict, Any
+
 from qiskit.pulse.channels import OutputChannel
 from qiskit.pulse.common.timeslots import Interval, Timeslot, TimeslotOccupancy
 from .instruction import Instruction
@@ -67,6 +69,16 @@ class FrameChangeInstruction(Instruction):
     def channel(self) -> OutputChannel:
         """OutputChannel channel. """
         return self._channel
+
+    @property
+    def to_dict(self) -> Dict[str, Any]:
+        """Return FrameChange Qobj."""
+        return {
+            'name': 'fc',
+            't0': self._begin_time,
+            'ch': self._channel.name,
+            'phase': self._command.phase
+        }
 
     def __repr__(self):
         return '%4d: %s -> %s' % (self._begin_time, self._command, self._channel)
