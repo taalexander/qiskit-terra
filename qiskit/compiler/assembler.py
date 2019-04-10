@@ -231,14 +231,10 @@ def assemble_schedules(schedules, dict_config, dict_header):
                                                config=experimentconfig))
 
     # generate qobj pulse library
-    qobj_default_pulselib = list(map(lambda p:
-                                     QobjPulseLibrary(name=p['name'], samples=p['samples']),
-                                     dict_config.get('pulse_library', []))
-                                 )
-    qobj_user_pulselib = list(map(lambda p:
-                                  QobjPulseLibrary(name=p.name, samples=p.samples),
-                                  user_pulselib)
-                              )
+    qobj_default_pulselib = [QobjPulseLibrary(name=p['name'], samples=p['samples'])
+                             for p in dict_config.get('pulse_library', [])]
+    qobj_user_pulselib = [QobjPulseLibrary(name=p.name, samples=p.samples)
+                          for p in user_pulselib]
 
     dict_config['pulse_library'] = qobj_default_pulselib + qobj_user_pulselib
 
