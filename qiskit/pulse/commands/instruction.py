@@ -10,7 +10,7 @@ Instruction = Leaf node of schedule.
 """
 import logging
 from copy import copy
-from typing import Tuple, Dict, Any
+from typing import Tuple
 
 from qiskit.pulse.common.interfaces import ScheduleComponent
 from qiskit.pulse.common.timeslots import TimeslotOccupancy
@@ -57,14 +57,6 @@ class Instruction(ScheduleComponent):
     def children(self) -> Tuple[ScheduleComponent, ...]:
         """Instruction has no child nodes. """
         return ()
-
-    @property
-    def to_dict(self) -> Dict[str, Any]:
-        """Dictionary to generate PulseQobjInstruction."""
-        return {
-            'name': self._command.name,
-            't0': self.begin_time
-        }
 
     def __repr__(self):
         return "%4d: %s" % (self._begin_time, self._command)
