@@ -31,9 +31,7 @@ class LoRange:
         Returns:
             bool: True if lo_freq is included in this range, otherwise False
         """
-        if lo_freq is None:
-            return True
-        elif self._lb <= lo_freq <= self._ub:
+        if self._lb <= lo_freq <= self._ub:
             return True
         return False
 
@@ -66,9 +64,10 @@ class OutputChannel(Channel):
             raise PulseError("Invalid form of lo_freq_range is specified.")
         self._lo_freq_range = LoRange(*lo_freq_range)
 
-        if not self._lo_freq_range.includes(self._lo_frequency):
-            raise PulseError("lo_frequency %f must be within lo_freq_range %s" %
-                             (self._lo_frequency, self._lo_freq_range))
+        if self._lo_frequency:
+            if not self._lo_freq_range.includes(self._lo_frequency):
+                raise PulseError("lo_frequency %f must be within lo_freq_range %s" %
+                                 (self._lo_frequency, self._lo_freq_range))
 
     @property
     def lo_frequency(self) -> float:
