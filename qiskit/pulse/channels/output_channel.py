@@ -47,24 +47,28 @@ class LoRange:
         """Upper bound of this LO range"""
         return self._ub
 
+    def __repr__(self):
+        return "%s(%f, %f)" % (self.__class__.__name__, self._lb, self._ub)
+
 
 class OutputChannel(Channel):
     """Output Channel."""
 
     @abstractmethod
     def __init__(self,
-                 index: int = None,
+                 index: int,
                  lo_frequency: float = None,
-                 lo_freq_range: Tuple[float, float] = None):
+                 lo_freq_range: Tuple[float, float] = (0, float("inf"))):
         super().__init__(index)
         self._lo_frequency = lo_frequency
-        self._lo_freq_range = None
-        if lo_freq_range:
-            if len(lo_freq_range) != 2:
-                raise PulseError("Invalid form of lo_freq_range is specified.")
-            self._lo_freq_range = LoRange(*lo_freq_range)
-            if not self._lo_freq_range.includes(self._lo_frequency):
-                raise PulseError("lo_frequency must be within lo_freq_range.")
+
+        if len(lo_freq_range) != 2:
+            raise PulseError("Invalid form of lo_freq_range is specified.")
+        self._lo_freq_range = LoRange(*lo_freq_range)
+
+        if not self._lo_freq_range.includes(self._lo_frequency):
+            raise PulseError("lo_frequency %f must be within lo_freq_range %s" %
+                             (self._lo_frequency, self._lo_freq_range))
 
     @property
     def lo_frequency(self) -> float:
@@ -103,7 +107,7 @@ class DriveChannel(OutputChannel):
 
     def __init__(self, index: int,
                  lo_frequency: float = None,
-                 lo_freq_range: Tuple[float, float] = None):
+                 lo_freq_range: Tuple[float, float] = (0, float("inf"))):
         """Create new drive (d) channel.
 
         Args:
@@ -121,7 +125,7 @@ class ControlChannel(OutputChannel):
 
     def __init__(self, index: int,
                  lo_frequency: float = None,
-                 lo_freq_range: Tuple[float, float] = None):
+                 lo_freq_range: Tuple[float, float] = (0, float("inf"))):
         """Create new control (u) channel.
 
         Args:
@@ -139,7 +143,7 @@ class MeasureChannel(OutputChannel):
 
     def __init__(self, index: int,
                  lo_frequency: float = None,
-                 lo_freq_range: Tuple[float, float] = None):
+                 lo_freq_range: Tuple[float, float] = (0, float("inf"))):
         """Create new measurement (m) channel.
 
         Args:
