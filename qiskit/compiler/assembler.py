@@ -149,13 +149,14 @@ def _replaced_with_user_los(user_lo_dict, default_los):
     return res
 
 
-def assemble_schedules(schedules, dict_config, dict_header, ):
+def assemble_schedules(schedules, dict_config, dict_header, converter=SuperConverter):
     """Assembles a list of circuits into a qobj which can be run on the backend.
 
     Args:
         schedules (list[ConditionedSchedule] or ConditionedSchedule): schedules to assemble
         dict_config (dict): configuration of experiments
         dict_header (dict): header to pass to the results
+        converter (SuperConverter): converter to convert pulse instruction to qobj instruction
 
     Returns:
         PulseQobj: the Qobj to be run on the backends
@@ -164,7 +165,7 @@ def assemble_schedules(schedules, dict_config, dict_header, ):
         QiskitError: when invalid command is provided
     """
 
-    qobj_converter = SuperConverter(PulseQobjInstruction, **dict_config)
+    qobj_converter = converter(PulseQobjInstruction, **dict_config)
 
     if isinstance(schedules, ConditionedSchedule):
         schedules = [schedules]
