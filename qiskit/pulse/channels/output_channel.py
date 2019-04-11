@@ -62,7 +62,7 @@ class OutputChannel(Channel):
         super().__init__(index)
         self._lo_frequency = lo_frequency
 
-        if len(lo_freq_range) != 2:
+        if (not isinstance(lo_freq_range, tuple)) or len(lo_freq_range) != 2:
             raise PulseError("Invalid form of lo_freq_range is specified.")
         self._lo_freq_range = LoRange(*lo_freq_range)
 

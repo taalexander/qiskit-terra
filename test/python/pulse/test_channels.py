@@ -164,11 +164,11 @@ class TestDeviceSpecification(QiskitTestCase):
 
                     @property
                     def qubit_lo_range(self):
-                        return [[1.2, 1.4], [3.2, 3.4]]
+                        return [(1.2, 1.4), (3.2, 3.4)]
 
                     @property
                     def meas_lo_range(self):
-                        return [[1.2, 1.4], [3.2, 3.4]]
+                        return [(1.2, 1.4), (3.2, 3.4)]
 
                 return DummyConfig()
 
