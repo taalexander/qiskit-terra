@@ -20,7 +20,7 @@ from qiskit.qobj import (QasmQobj, PulseQobj, QobjExperimentHeader, QobjHeader,
                          QasmQobjConfig, QobjConditional,
                          PulseQobjInstruction, PulseQobjExperimentConfig, PulseQobjExperiment,
                          PulseQobjConfig, QobjPulseLibrary)
-from .pulse_to_qobj import SuperConverter
+from .pulse_to_qobj import PulseQobjConverter
 from .run_config import RunConfig
 
 
@@ -149,14 +149,14 @@ def _replaced_with_user_los(user_lo_dict, default_los):
     return res
 
 
-def assemble_schedules(schedules, dict_config, dict_header, converter=SuperConverter):
+def assemble_schedules(schedules, dict_config, dict_header, converter=PulseQobjConverter):
     """Assembles a list of circuits into a qobj which can be run on the backend.
 
     Args:
         schedules (list[ConditionedSchedule] or ConditionedSchedule): schedules to assemble
         dict_config (dict): configuration of experiments
         dict_header (dict): header to pass to the results
-        converter (SuperConverter): converter to convert pulse instruction to qobj instruction
+        converter (PulseQobjConverter): converter to convert pulse instruction to qobj instruction
 
     Returns:
         PulseQobj: the Qobj to be run on the backends
