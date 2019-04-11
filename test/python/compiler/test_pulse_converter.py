@@ -12,7 +12,7 @@
 import unittest
 from qiskit.test import QiskitTestCase
 from qiskit.qobj import PulseQobjInstruction
-from qiskit.compiler.pulse_to_qobj import SuperConverter
+from qiskit.compiler.pulse_to_qobj import PulseQobjConverter
 from qiskit.pulse.commands import SamplePulse, DriveInstruction
 from qiskit.pulse.channels import (DeviceSpecification, Qubit, AcquireChannel, DriveChannel,
                                    RegisterSlot, MemorySlot)
@@ -34,7 +34,7 @@ class TestPulseConverter(QiskitTestCase):
 
     def test_pulse_converter(self):
 
-        converter = SuperConverter(PulseQobjInstruction, meas_level=2)
+        converter = PulseQobjConverter(PulseQobjInstruction, meas_level=2)
 
         valid_qobj = PulseQobjInstruction(
             name='gauss',

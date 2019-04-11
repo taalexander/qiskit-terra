@@ -40,7 +40,7 @@ def bind_instruction(type_instruction):
     return _apply_converter
 
 
-class SuperConverter:
+class PulseQobjConverter:
     """
     This class exists for separating entity of pulse instructions and qobj instruction,
     and provides some alleviation of the complexity of the assembler.
@@ -55,7 +55,7 @@ class SuperConverter:
 
     To create custom converter for custom instruction
     ```
-    class CustomConverter(SuperConverter):
+    class CustomConverter(PulseQobjConverter):
 
         @bind_instruction(CustomInstruction)
         def _convert_custom_command(self, instruction):
