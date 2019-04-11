@@ -13,16 +13,15 @@ import numpy
 import sympy
 
 from qiskit.circuit.quantumcircuit import QuantumCircuit
-from qiskit.compiler.run_config import RunConfig
-from qiskit.exceptions import QiskitError
 from qiskit.pulse import ConditionedSchedule, UserLoDict
-from qiskit.pulse.commands import (DriveInstruction, FrameChangeInstruction,
-                                   PersistentValueInstruction, AcquireInstruction, Snapshot)
+from qiskit.pulse.commands import DriveInstruction
 from qiskit.qobj import (QasmQobj, PulseQobj, QobjExperimentHeader, QobjHeader,
                          QasmQobjInstruction, QasmQobjExperimentConfig, QasmQobjExperiment,
                          QasmQobjConfig, QobjConditional,
                          PulseQobjInstruction, PulseQobjExperimentConfig, PulseQobjExperiment,
-                         PulseQobjConfig, QobjPulseLibrary, QobjMeasurementOption)
+                         PulseQobjConfig, QobjPulseLibrary)
+from .pulse_to_qobj import PulseQobjConverter
+from .run_config import RunConfig
 
 
 def assemble_circuits(circuits, run_config=None, qobj_header=None, qobj_id=None):
@@ -150,13 +149,14 @@ def _replaced_with_user_los(user_lo_dict, default_los):
     return res
 
 
-def assemble_schedules(schedules, dict_config, dict_header):
+def assemble_schedules(schedules, dict_config, dict_header, converter=PulseQobjConverter):
     """Assembles a list of circuits into a qobj which can be run on the backend.
 
     Args:
         schedules (list[ConditionedSchedule] or ConditionedSchedule): schedules to assemble
         dict_config (dict): configuration of experiments
         dict_header (dict): header to pass to the results
+        converter (PulseQobjConverter): converter to convert pulse instruction to qobj instruction
 
     Returns:
         PulseQobj: the Qobj to be run on the backends
@@ -164,6 +164,9 @@ def assemble_schedules(schedules, dict_config, dict_header):
     Raises:
         QiskitError: when invalid command is provided
     """
+
+    qobj_converter = converter(PulseQobjInstruction, **dict_config)
+
     if isinstance(schedules, ConditionedSchedule):
         schedules = [schedules]
 
@@ -196,98 +199,22 @@ def assemble_schedules(schedules, dict_config, dict_header):
 
         commands = []
         for instruction in conditioned.schedule.flat_instruction_sequence():
-            if isinstance(instruction, DriveInstruction):
-                # Sample pulses
-                # required: `ch`
-                # optional:
-                current_command = PulseQobjInstruction(
-                    name=instruction.command.name,
-                    t0=instruction.begin_time,
-                    ch=instruction.channel.name
-                )
-                # TODO: support conditional gate
-                user_pulselib.add(instruction.command)
-            elif isinstance(instruction, FrameChangeInstruction):
-                # Frame change
-                # required: `ch`, `phase`
-                # optional:
-                current_command = PulseQobjInstruction(
-                    name='fc',
-                    t0=instruction.begin_time,
-                    ch=instruction.channel.name,
-                    phase=instruction.command.phase
-                )
-            elif isinstance(instruction, PersistentValueInstruction):
-                # Persistent value
-                # required: `ch`, `val`
-                # optional:
-                current_command = PulseQobjInstruction(
-                    name='pv',
-                    t0=instruction.begin_time,
-                    ch=instruction.channel.name,
-                    val=instruction.command.value
-                )
-            elif isinstance(instruction, AcquireInstruction):
-                # Acquire
-                # required: `duration`, `qubits`, `memory_slot`
-                # optional: `discriminators`, `kernels`, `register_slot`
-                current_command = PulseQobjInstruction(
-                    name='acquire',
-                    t0=instruction.begin_time,
-                    duration=instruction.command.duration,
-                    qubits=[q.index for q in instruction.qubits],
-                    memory_slot=[mems.index for mems in instruction.mem_slots]
-                )
-                # add optional fields
-                meas_level = dict_config.get('meas_level', 2)
-                if meas_level == 2:
-                    # apply discriminator and register_slot for level 2 measurement
-                    current_command.register_slot = [regs.index for regs in instruction.reg_slots]
-                    _discriminator = instruction.command.discriminator
-                    if _discriminator:
-                        qobj_discriminator = QobjMeasurementOption(name=_discriminator.name,
-                                                                   params=_discriminator.params)
-                        current_command.discriminators = [qobj_discriminator]
-                    else:
-                        current_command.discriminators = []
-                if meas_level >= 1:
-                    # apply kernel for level 1, 2 measurements
-                    _kernel = instruction.command.kernel
-                    if _kernel:
-                        qobj_kernel = QobjMeasurementOption(name=_kernel.name,
-                                                            params=_kernel.params)
-                        current_command.kernels = [qobj_kernel]
-                    else:
-                        current_command.kernels = []
-            elif isinstance(instruction, Snapshot):
-                # Snapshot
-                # required: `label`, `type`
-                # optional:
-                current_command = PulseQobjInstruction(
-                    name='snapshot',
-                    t0=instruction.begin_time,
-                    label=instruction.label,
-                    type=instruction.type
-                )
-            else:
-                raise QiskitError('Invalid instruction is given, %s'
-                                  % instruction.__class__.__name__)
+            # TODO: support conditional gate
+            commands.append(qobj_converter(instruction))
 
-            commands.append(current_command)
+            if isinstance(instruction, DriveInstruction):
+                # add samples to pulse library
+                user_pulselib.add(instruction.command)
 
         experiments.append(PulseQobjExperiment(instructions=commands,
                                                header=experimentheader,
                                                config=experimentconfig))
 
     # generate qobj pulse library
-    qobj_default_pulselib = list(map(lambda p:
-                                     QobjPulseLibrary(name=p['name'], samples=p['samples']),
-                                     dict_config.get('pulse_library', []))
-                                 )
-    qobj_user_pulselib = list(map(lambda p:
-                                  QobjPulseLibrary(name=p.name, samples=p.samples),
-                                  user_pulselib)
-                              )
+    qobj_default_pulselib = [QobjPulseLibrary(name=p['name'], samples=p['samples'])
+                             for p in dict_config.get('pulse_library', [])]
+    qobj_user_pulselib = [QobjPulseLibrary(name=p.name, samples=p.samples)
+                          for p in user_pulselib]
 
     dict_config['pulse_library'] = qobj_default_pulselib + qobj_user_pulselib
 
