@@ -148,7 +148,7 @@ def _replaced_with_user_los(user_lo_dict, default_los):
     return res
 
 
-def assemble_schedules(schedules, dict_config, dict_header):
+def assemble_schedules(schedules, dict_config, dict_header, ):
     """Assembles a list of circuits into a qobj which can be run on the backend.
 
     Args:

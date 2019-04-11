@@ -9,7 +9,6 @@
 Sample pulse.
 """
 import numpy as np
-from typing import Dict, Any
 
 from qiskit.pulse.channels import OutputChannel
 from qiskit.pulse.common.timeslots import Interval, Timeslot, TimeslotCollection
@@ -102,15 +101,6 @@ class DriveInstruction(Instruction):
     def channel(self) -> OutputChannel:
         """OutputChannel command. """
         return self._channel
-
-    @property
-    def to_dict(self) -> Dict[str, Any]:
-        """Return SamplePulse Qobj."""
-        return {
-            'name': self._command.name,
-            't0': self._begin_time,
-            'ch': self._channel.name
-        }
 
     def __repr__(self):
         return '%4d: %s -> %s' % (self._start_time, self._command, self._channel)

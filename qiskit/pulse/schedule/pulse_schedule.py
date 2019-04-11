@@ -10,7 +10,7 @@ Schedule.
 """
 import logging
 from copy import copy
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple
 
 from qiskit.pulse.common.interfaces import ScheduleComponent
 from qiskit.pulse.common.timeslots import TimeslotCollection
@@ -141,11 +141,6 @@ class Schedule(ScheduleComponent):
             if child.children:
                 raise NotImplementedError("This version doesn't support schedule of schedules.")
         return '\n'.join([str(child) for child in self._children])
-
-    @property
-    def to_dict(self) -> Dict[str, Any]:
-        """Schedule is not used to create PulseQobjInstruction."""
-        return {}
 
     def flat_instruction_sequence(self) -> List[ScheduleComponent]:
         """Return instruction sequence of this schedule.

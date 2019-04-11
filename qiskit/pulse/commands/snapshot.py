@@ -9,8 +9,6 @@
 Snapshot.
 """
 
-from typing import Dict, Any
-
 from qiskit.pulse.channels import SnapshotChannel
 from qiskit.pulse.common.timeslots import TimeslotCollection
 from .instruction import Instruction
@@ -50,16 +48,6 @@ class Snapshot(PulseCommand, Instruction):
     def channel(self) -> SnapshotChannel:
         """Snapshot channel. """
         return self._channel
-
-    @property
-    def to_dict(self) -> Dict[str, Any]:
-        """Return SnapShot Qobj."""
-        return {
-            'name': 'snapshot',
-            't0': self._begin_time,
-            'label': self._label,
-            'type': self._type
-        }
 
     def __eq__(self, other):
         """Two Snapshots are the same if they are of the same type
