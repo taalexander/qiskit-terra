@@ -163,11 +163,19 @@ class TestDeviceSpecification(QiskitTestCase):
                         return {'qubit_freq_est': [1.2, 3.4],
                                 'meas_freq_est': [1.2, 3.4]}
 
+                    @property
+                    def qubit_lo_range(self):
+                        return [(1.2, 1.4), (3.2, 3.4)]
+
+                    @property
+                    def meas_lo_range(self):
+                        return [(1.2, 1.4), (3.2, 3.4)]
+
                 return DummyConfig()
 
         device = DeviceSpecification.create_from(DummyBackend())
 
-        self.assertEqual(device.q[0].drive, DriveChannel(0, 1.2))
+        self.assertEqual(device.q[0].drive, DriveChannel(0, 1.2, (1.2, 1.4)))
         with self.assertRaises(PulseError):
             _ = device.q[0].control
 

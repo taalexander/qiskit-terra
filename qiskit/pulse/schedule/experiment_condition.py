@@ -11,6 +11,7 @@ Configurations for pulse experiments.
 from typing import Dict
 
 from qiskit.pulse.channels import OutputChannel
+from qiskit.pulse.exceptions import PulseError
 
 
 class UserLoDict:
@@ -20,8 +21,12 @@ class UserLoDict:
         self._user_lo_dic = {}
         if user_lo_dic:
             for channel, user_lo in user_lo_dic.items():
-                # TODO: lo_range check
+                if not channel.lo_freq_range.includes(user_lo):
+                    raise PulseError("Specified LO freq %f is out of range %s" %
+                                     (user_lo, channel.lo_freq_range))
                 self._user_lo_dic[channel] = user_lo
 
+    # TODO: what should we publish? (with keeping this object immutable)
     def items(self):
+        """Return items of this user LO dictionary"""
         return self._user_lo_dic.items()
