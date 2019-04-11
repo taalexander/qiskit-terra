@@ -13,14 +13,15 @@ import numpy
 import sympy
 
 from qiskit.circuit.quantumcircuit import QuantumCircuit
-from qiskit.compiler.run_config import RunConfig
 from qiskit.pulse import ConditionedSchedule, UserLoDict
-from qiskit.pulse.commands import AcquireInstruction, DriveInstruction
+from qiskit.pulse.commands import DriveInstruction
 from qiskit.qobj import (QasmQobj, PulseQobj, QobjExperimentHeader, QobjHeader,
                          QasmQobjInstruction, QasmQobjExperimentConfig, QasmQobjExperiment,
                          QasmQobjConfig, QobjConditional,
                          PulseQobjInstruction, PulseQobjExperimentConfig, PulseQobjExperiment,
-                         PulseQobjConfig, QobjPulseLibrary, QobjMeasurementOption)
+                         PulseQobjConfig, QobjPulseLibrary)
+from .pulse_to_qobj import SuperConverter
+from .run_config import RunConfig
 
 
 def assemble_circuits(circuits, run_config=None, qobj_header=None, qobj_id=None):
@@ -162,6 +163,9 @@ def assemble_schedules(schedules, dict_config, dict_header, ):
     Raises:
         QiskitError: when invalid command is provided
     """
+
+    qobj_converter = SuperConverter(PulseQobjInstruction, **dict_config)
+
     if isinstance(schedules, ConditionedSchedule):
         schedules = [schedules]
 
@@ -195,36 +199,11 @@ def assemble_schedules(schedules, dict_config, dict_header, ):
         commands = []
         for instruction in conditioned.schedule.flat_instruction_sequence():
             # TODO: support conditional gate
-            current_command = PulseQobjInstruction(**instruction.to_dict)
+            commands.append(qobj_converter(instruction))
 
             if isinstance(instruction, DriveInstruction):
                 # add samples to pulse library
                 user_pulselib.add(instruction.command)
-
-            if isinstance(instruction, AcquireInstruction):
-                # add optional fields
-                meas_level = dict_config.get('meas_level', 2)
-                if meas_level == 2:
-                    # apply discriminator and register_slot for level 2 measurement
-                    current_command.register_slot = [regs.index for regs in instruction.reg_slots]
-                    _discriminator = instruction.command.discriminator
-                    if _discriminator:
-                        qobj_discriminator = QobjMeasurementOption(name=_discriminator.name,
-                                                                   params=_discriminator.params)
-                        current_command.discriminators = [qobj_discriminator]
-                    else:
-                        current_command.discriminators = []
-                if meas_level >= 1:
-                    # apply kernel for level 1, 2 measurements
-                    _kernel = instruction.command.kernel
-                    if _kernel:
-                        qobj_kernel = QobjMeasurementOption(name=_kernel.name,
-                                                            params=_kernel.params)
-                        current_command.kernels = [qobj_kernel]
-                    else:
-                        current_command.kernels = []
-
-            commands.append(current_command)
 
         experiments.append(PulseQobjExperiment(instructions=commands,
                                                header=experimentheader,

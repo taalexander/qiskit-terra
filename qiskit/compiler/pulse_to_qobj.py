@@ -7,37 +7,93 @@
 
 """Helper class to assemble pulse instruction to PulseQobjInstruction."""
 
-from qiskit.pulse import commands
-from qiskit.qobj import QobjMeasurementOption
+import functools
+import inspect
 
-from functools import wraps
+from qiskit.pulse import commands
+from qiskit.pulse.exceptions import PulseError
+from qiskit.qobj import QobjMeasurementOption
 
 
 def bind_instruction(type_instruction):
-    def _wrapper(convert_func):
-        def _decorated_converter(instruction):
+    """ Converter decorator method.
+
+    Pulse instruction converter is defined for each instruction type,
+    and this decorator binds converter function to valid instruction type.
+
+    Args:
+        type_instruction: valid pulse instruction class to the converter.
+    """
+    def _apply_converter(converter):
+        """Return decorated converter function."""
+        # pylint: disable=missing-return-doc
+
+        @functools.wraps(converter)
+        def _call_valid_converter(self, instruction):
+            """Return dictionary for qobj if the given instruction matches to the
+            bound instruction type to the function, otherwise just return None."""
             if isinstance(instruction, type_instruction):
-                return convert_func(instruction)
+                return converter(self, instruction)
             else:
-                pass
-        return _decorated_converter
-    return _wrapper
+                return None
+        return _call_valid_converter
+    return _apply_converter
 
 
 class SuperConverter:
+    """
+    This class exists for separating entity of pulse instructions and qobj instruction,
+    and provides some alleviation of the complexity of the assembler.
 
-    def __init__(self, qobj_model, meas_level=2):
+    Converter is constructed with qobj model and some experimental configuration,
+    and returns proper qobj instruction to each backend.
+
+    Pulse instruction and its qobj are strongly depends on the design of backend,
+    and third party providers can be easily add their custom pulse instruction by
+    providing custom converter inherit from this.
+
+
+    To create custom converter for custom instruction
+    ```
+    class CustomConverter(SuperConverter):
+
+        @bind_instruction(CustomInstruction)
+        def _convert_custom_command(self, instruction):
+            command_dict = {
+                'name': 'custom_command',
+                't0': instruction.begin_time,
+                'param1': instruction.param1,
+                'param2': instruction.param2
+            }
+            if self._exp_config('option1', True):
+                command_dict.update({
+                    'param3': instruction.param3
+                })
+            return self.qobj_model(**command_dict)
+    ```
+
+    The name of converter method should start with `_convert_` otherwise it is ignored.
+    Provided fields are automatically serialized by given qobj model.
+    """
+
+    def __init__(self, qobj_model, **exp_config):
         """Create new converter.
 
         Args:
              qobj_model (QobjInstruction): marshmallow model to serialize to object.
-             meas_level (int): Level of measurement.
         """
-        self.qobj_model = qobj_model
-        self.meas_level = meas_level
+        self._qobj_model = qobj_model
+        self._exp_config = exp_config
 
-    def __call__(self, *args, **kwargs):
-        pass
+    def __call__(self, instruction):
+
+        for name, method in inspect.getmembers(self, inspect.ismethod):
+            if name.startswith('_convert_'):
+                dict_qobj = method(instruction)
+                if dict_qobj:
+                    return dict_qobj
+        else:
+            PulseError('Proper qobj for %s is not found.' % instruction.command)
 
     @bind_instruction(commands.AcquireInstruction)
     def _convert_acquire(self, instruction):
@@ -48,6 +104,8 @@ class SuperConverter:
         Returns:
             dict: Dictionary of required parameters.
         """
+        meas_level = self._exp_config.get('meas_level', 2)
+
         command_dict = {
             'name': 'acquire',
             't0': instruction.begin_time,
@@ -55,7 +113,7 @@ class SuperConverter:
             'qubits': [q.index for q in instruction.qubits],
             'memory_slot': [m.index for m in instruction.mem_slots]
         }
-        if self.meas_level == 2:
+        if meas_level == 2:
             # setup discriminators
             if instruction.command.discriminator:
                 command_dict.update({
@@ -73,7 +131,7 @@ class SuperConverter:
             command_dict.update({
                 'register_slot': [regs.index for regs in instruction.reg_slots]
             })
-        if self.meas_level >= 1:
+        if meas_level >= 1:
             # setup kernels
             if instruction.command.kernel:
                 command_dict.update({
@@ -87,7 +145,7 @@ class SuperConverter:
                 command_dict.update({
                     'kernels': []
                 })
-        return self.qobj_model(**command_dict)
+        return self._qobj_model(**command_dict)
 
     @bind_instruction(commands.FrameChangeInstruction)
     def _convert_frame_change(self, instruction):
@@ -104,7 +162,7 @@ class SuperConverter:
             'ch': instruction.channel.name,
             'phase': instruction.command.phase
         }
-        return self.qobj_model(**command_dict)
+        return self._qobj_model(**command_dict)
 
     @bind_instruction(commands.PersistentValueInstruction)
     def _convert_persistent_value(self, instruction):
@@ -121,7 +179,7 @@ class SuperConverter:
             'ch': instruction.channel.name,
             'val': instruction.command.value
         }
-        return self.qobj_model(**command_dict)
+        return self._qobj_model(**command_dict)
 
     @bind_instruction(commands.DriveInstruction)
     def _convert_drive(self, instruction):
@@ -137,7 +195,7 @@ class SuperConverter:
             't0': instruction.begin_time,
             'ch': instruction.channel.name
         }
-        return self.qobj_model(**command_dict)
+        return self._qobj_model(**command_dict)
 
     @bind_instruction(commands.Snapshot)
     def _convert_snapshot(self, instruction):
@@ -154,4 +212,4 @@ class SuperConverter:
             'label': instruction.label,
             'type': instruction.type
         }
-        return self.qobj_model(**command_dict)
+        return self._qobj_model(**command_dict)
