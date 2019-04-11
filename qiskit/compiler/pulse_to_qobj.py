@@ -61,7 +61,7 @@ class PulseQobjConverter:
         def _convert_custom_command(self, instruction):
             command_dict = {
                 'name': 'custom_command',
-                't0': instruction.begin_time,
+                't0': instruction.start_time,
                 'param1': instruction.param1,
                 'param2': instruction.param2
             }
@@ -108,7 +108,7 @@ class PulseQobjConverter:
 
         command_dict = {
             'name': 'acquire',
-            't0': instruction.begin_time,
+            't0': instruction.start_time,
             'duration': instruction.duration,
             'qubits': [q.index for q in instruction.qubits],
             'memory_slot': [m.index for m in instruction.mem_slots]
@@ -158,7 +158,7 @@ class PulseQobjConverter:
         """
         command_dict = {
             'name': 'fc',
-            't0': instruction.begin_time,
+            't0': instruction.start_time,
             'ch': instruction.channel.name,
             'phase': instruction.command.phase
         }
@@ -175,7 +175,7 @@ class PulseQobjConverter:
         """
         command_dict = {
             'name': 'pv',
-            't0': instruction.begin_time,
+            't0': instruction.start_time,
             'ch': instruction.channel.name,
             'val': instruction.command.value
         }
@@ -192,7 +192,7 @@ class PulseQobjConverter:
         """
         command_dict = {
             'name': instruction.command.name,
-            't0': instruction.begin_time,
+            't0': instruction.start_time,
             'ch': instruction.channel.name
         }
         return self._qobj_model(**command_dict)
@@ -208,7 +208,7 @@ class PulseQobjConverter:
         """
         command_dict = {
             'name': 'snapshot',
-            't0': instruction.begin_time,
+            't0': instruction.start_time,
             'label': instruction.label,
             'type': instruction.type
         }
