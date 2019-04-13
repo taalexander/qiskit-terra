@@ -10,7 +10,7 @@ Timeslot occupancy for each channels.
 """
 import logging
 from collections import defaultdict
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from qiskit.pulse.channels import Channel
 from qiskit.pulse.exceptions import PulseError
@@ -120,22 +120,24 @@ class TimeslotCollection:
         """Time slots of this occupancy."""
         return self._timeslots
 
-    def is_mergeable_with(self, occupancy: 'TimeslotCollection') -> bool:
+    def is_mergeable_with(self, timeslot_collection: Union['TimeslotCollection',
+                                                           List['TimeslotCollection']]) -> bool:
         """Return if self is mergeable with a specified `occupancy` or not.
 
         Args:
-            occupancy: TimeslotCollection to be checked
+            timeslot_collection: TimeslotCollection to be checked
 
         Returns:
             True if self is mergeable with `occupancy`, otherwise False.
         """
-        for slot in occupancy.timeslots:
+        for slot in timeslot_collection.timeslots:
             for interval in self._table[slot.channel]:
                 if slot.interval.has_overlap(interval):
                     return False
         return True
 
-    def merged(self, occupancy: 'TimeslotCollection') -> Optional['TimeslotCollection']:
+    def merged(self, occupancy: Union['TimeslotCollection',
+                                      List['TimeslotCollection']]) ->Optional['TimeslotCollection']:
         """Return a new TimeslotCollection merged with a specified `occupancy`
 
         Args:

@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 
 class Schedule(ScheduleComponent):
-    """Schedule of instructions. The composite node of a schedule tree."""
+    """Immutable Schedule of instructions. The composite node of a schedule tree."""
 
-    def __init__(self, name: str = None, start_time: int = 0):
+    def __init__(self, *schedules, name: str = None, start_time: int = 0):
         """Create empty schedule.
 
         Args:
@@ -39,69 +39,6 @@ class Schedule(ScheduleComponent):
         """Name of this schedule."""
         return self._name
 
-    def insert(self, start_time: int, schedule: ScheduleComponent) -> 'Schedule':
-        """Return a new schedule with inserting a `schedule` at `start_time`.
-
-        Args:
-            start_time (int): time to be inserted
-            schedule (ScheduleComponent): schedule to be inserted
-
-        Returns:
-            Schedule: a new schedule inserted a `schedule` at `start_time`
-
-        Raises:
-            PulseError: when an invalid schedule is specified or failed to insert
-        """
-        if not isinstance(schedule, ScheduleComponent):
-            raise PulseError("Invalid to be inserted: %s" % schedule.__class__.__name__)
-        news = copy(self)
-        try:
-            news._insert(start_time, schedule)
-        except PulseError as err:
-            raise PulseError(err.message)
-        return news
-
-    def _insert(self, start_time: int, schedule: ScheduleComponent):
-        """Insert a new `schedule` at `start_time`.
-        Args:
-            start_time (int): start time of the schedule
-            schedule (ScheduleComponent): schedule to be inserted
-        Raises:
-            PulseError: when an invalid schedule is specified or failed to insert
-        """
-        if schedule == self:
-            raise PulseError("Cannot insert self to avoid infinite recursion")
-        shifted = schedule.occupancy.shifted(start_time)
-        if self._occupancy.is_mergeable_with(shifted):
-            self._occupancy = self._occupancy.merged(shifted)
-            self._children += (schedule.shifted(start_time),)
-        else:
-            logger.warning("Fail to insert %s at %s due to timing overlap", schedule, start_time)
-            raise PulseError("Fail to insert %s at %s due to overlap" % (str(schedule), start_time))
-
-    def append(self, schedule: ScheduleComponent) -> 'Schedule':
-        """Return a new schedule with appending a `schedule` at the timing
-        just after the last instruction finishes.
-
-        Args:
-            schedule (ScheduleComponent): schedule to be appended
-
-        Returns:
-            Schedule: a new schedule appended a `schedule`
-
-        Raises:
-            PulseError: when an invalid schedule is specified or failed to append
-        """
-        if not isinstance(schedule, ScheduleComponent):
-            raise PulseError("Invalid to be appended: %s" % schedule.__class__.__name__)
-        news = copy(self)
-        try:
-            news._insert(self.stop_time, schedule)
-        except PulseError:
-            logger.warning("Fail to append %s due to timing overlap", schedule)
-            raise PulseError("Fail to append %s due to overlap" % str(schedule))
-        return news
-
     @property
     def duration(self) -> int:
         return self.stop_time - self.start_time
@@ -109,12 +46,6 @@ class Schedule(ScheduleComponent):
     @property
     def occupancy(self) -> TimeslotCollection:
         return self._occupancy
-
-    def shifted(self, shift: int) -> ScheduleComponent:
-        news = copy(self)
-        news._start_time += shift
-        news._occupancy = self._occupancy.shifted(shift)
-        return news
 
     @property
     def start_time(self) -> int:
