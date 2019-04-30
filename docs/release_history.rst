@@ -76,6 +76,9 @@ use case, either ``PulseQobj`` or ``QasmQobj`` for pulse and circuit jobs
 respectively. If you're interacting with Qobj directly you may need to adjust
 your usage accordingly.
 
+The ``qiskit.qobj.qobj_to_dict()`` is removed. Instead use the `to_dict()`
+method of a Qobj object.
+
 Changes to Visualization
 """"""""""""""""""""""""
 
@@ -114,6 +117,12 @@ While it has only been deprecated in this release it will be removed in the
 from ``qiskit.transpiler`` instead of ``qiskit.mapper`` sooner will avoid any
 surprises in the future.
 
+transpile(), assemble(), compile(), execute() parameters
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+All kwargs except for ``backend`` for these functions now also accept lists
+of the previously accepted types.
+
 
 Deprecations
 ^^^^^^^^^^^^
@@ -134,7 +143,7 @@ in the future.
 * The ``qiskit.compile()`` function is now deprecated in favor of explicitly
   using the ``qiskit.compiler.transpile()`` function to transform a circuit
   followed by ``qiskit.compiler.assemble_circuits()`` to make a qobj out of
-  it.
+  it. Instead of compile(...), use assemble(transpile(...), ...)
 * ``qiskit.converters.qobj_to_circuits()`` has been deprecated and will be
   removed in a future release. Instead
   ``qiskit.compiler.disassemble_circuits()`` should be used to extract
