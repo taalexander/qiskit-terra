@@ -12,7 +12,7 @@ from marshmallow.validate import Range, Regexp, Length, OneOf
 from qiskit.qobj.utils import MeasReturnType
 from qiskit.validation import BaseSchema, bind_schema, BaseModel
 from qiskit.validation.fields import (Integer, String, Number, Complex, List,
-                                      Nested, DictParameters, ByType)
+                                      Nested, DictParameters)
 from .base import (QobjInstructionSchema, QobjExperimentConfigSchema, QobjExperimentSchema,
                    QobjConfigSchema, QobjInstruction, QobjExperimentConfig,
                    QobjExperiment, QobjConfig)
@@ -45,8 +45,8 @@ class PulseQobjInstructionSchema(QobjInstructionSchema):
     # Optional properties.
     ch = String(validate=Regexp('[dum]([0-9])+'))
     conditional = Integer(validate=Range(min=0))
-    val = ByType([Complex(), String()])
-    phase = ByType([Number(), String()])
+    val = Complex()
+    phase = Number()
     duration = Integer(validate=Range(min=1))
     qubits = List(Integer(validate=Range(min=0)), validate=Length(min=1))
     memory_slot = List(Integer(validate=Range(min=0)), validate=Length(min=1))

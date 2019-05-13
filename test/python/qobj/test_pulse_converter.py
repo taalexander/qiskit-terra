@@ -12,6 +12,7 @@ import numpy as np
 from qiskit.test import QiskitTestCase
 from qiskit.qobj import (PulseQobjInstruction, PulseQobjExperimentConfig, PulseLibraryItem,
                          QobjMeasurementOption)
+from qiskit.providers.models import CmdDefPulseQobjInstruction
 from qiskit.qobj.converters import (InstructionToQobjConverter, QobjToInstructionConverter,
                                     LoConfigConverter)
 from qiskit.qobj.converters.pulse_instruction import _is_math_expr_safe
@@ -155,7 +156,7 @@ class TestQobjToInstructionConverter(QiskitTestCase):
         cmd = self.linear
         instruction = cmd(DriveChannel(0)) << 10
 
-        qobj = PulseQobjInstruction(name='linear', ch='d0', t0=10)
+        qobj = CmdDefPulseQobjInstruction(name='linear', ch='d0', t0=10)
         converted_instruction = self.converter(qobj)
 
         self.assertEqual(converted_instruction.timeslots, instruction.timeslots)
@@ -166,7 +167,7 @@ class TestQobjToInstructionConverter(QiskitTestCase):
         cmd = FrameChange(phase=0.1)
         instruction = cmd(MeasureChannel(0))
 
-        qobj = PulseQobjInstruction(name='fc', ch='m0', t0=0, phase=0.1)
+        qobj = CmdDefPulseQobjInstruction(name='fc', ch='m0', t0=0, phase=0.1)
         converted_instruction = self.converter(qobj)
 
         self.assertEqual(converted_instruction.timeslots, instruction.timeslots)
@@ -177,7 +178,7 @@ class TestQobjToInstructionConverter(QiskitTestCase):
         cmd = PersistentValue(value=0.1j)
         instruction = cmd(ControlChannel(1))
 
-        qobj = PulseQobjInstruction(name='pv', ch='u1', t0=0, val=0.1j)
+        qobj = CmdDefPulseQobjInstruction(name='pv', ch='u1', t0=0, val=0.1j)
         converted_instruction = self.converter(qobj)
 
         self.assertEqual(converted_instruction.timeslots, instruction.timeslots)
@@ -189,12 +190,12 @@ class TestQobjToInstructionConverter(QiskitTestCase):
                       Kernel(name='test_kern', params={'test_params': 'test'}))
         instruction = cmd(self.device.q, self.device.mem, self.device.c)
 
-        qobj = PulseQobjInstruction(name='acquire', t0=0, duration=10, qubits=[0],
-                                    memory_slot=[0], register_slot=[0],
-                                    kernels=[QobjMeasurementOption(
-                                        name='test_kern', params={'test_params': 'test'})],
-                                    discriminators=[QobjMeasurementOption(
-                                        name='test_disc', params={'test_params': 1.0})])
+        qobj = CmdDefPulseQobjInstruction(name='acquire', t0=0, duration=10, qubits=[0],
+                                          memory_slot=[0], register_slot=[0],
+                                          kernels=[QobjMeasurementOption(
+                                              name='test_kern', params={'test_params': 'test'})],
+                                          discriminators=[QobjMeasurementOption(
+                                              name='test_disc', params={'test_params': 1.0})])
         converted_instruction = self.converter(qobj)
 
         self.assertEqual(converted_instruction.timeslots, instruction.timeslots)
@@ -205,7 +206,7 @@ class TestQobjToInstructionConverter(QiskitTestCase):
         cmd = Snapshot(name='label', snap_type='type')
         instruction = cmd << 10
 
-        qobj = PulseQobjInstruction(name='snapshot', t0=10, label='label', type='type')
+        qobj = CmdDefPulseQobjInstruction(name='snapshot', t0=10, label='label', type='type')
         converted_instruction = self.converter(qobj)
 
         self.assertEqual(converted_instruction.timeslots, instruction.timeslots)
@@ -216,7 +217,7 @@ class TestQobjToInstructionConverter(QiskitTestCase):
         cmd = FrameChange(phase=4.)
         instruction = cmd(MeasureChannel(0)) << 10
 
-        qobj = PulseQobjInstruction(name='fc', ch='m0', t0=10, phase='P1**2')
+        qobj = CmdDefPulseQobjInstruction(name='fc', ch='m0', t0=10, phase='P1**2')
         converted_instruction = self.converter(qobj)
 
         self.assertIsInstance(converted_instruction, ParameterizedSchedule)
@@ -231,7 +232,7 @@ class TestQobjToInstructionConverter(QiskitTestCase):
         cmd = PersistentValue(value=0.5+0.j)
         instruction = cmd(ControlChannel(1)) << 10
 
-        qobj = PulseQobjInstruction(name='pv', ch='u1', t0=10, val='P1*cos(np.pi*P2)')
+        qobj = CmdDefPulseQobjInstruction(name='pv', ch='u1', t0=10, val='P1*cos(np.pi*P2)')
         converted_instruction = self.converter(qobj)
 
         self.assertIsInstance(converted_instruction, ParameterizedSchedule)

@@ -12,7 +12,7 @@ import numpy as np
 from qiskit.test import QiskitTestCase
 from qiskit.test.mock import FakeProvider
 from qiskit.qobj.converters import QobjToInstructionConverter
-from qiskit.qobj import PulseQobjInstruction
+from qiskit.providers.models import CmdDefPulseQobjInstruction
 from qiskit.pulse import (CmdDef, SamplePulse, Schedule, DeviceSpecification,
                           PulseError, PersistentValue)
 
@@ -70,7 +70,7 @@ class TestCmdDef(QiskitTestCase):
         """Test building parameterized schedule."""
         cmd_def = CmdDef()
         converter = QobjToInstructionConverter([], buffer=0)
-        qobj = PulseQobjInstruction(name='pv', ch='u1', t0=10, val='P2*cos(np.pi*P1)')
+        qobj = CmdDefPulseQobjInstruction(name='pv', ch='u1', t0=10, val='P2*cos(np.pi*P1)')
         converted_instruction = converter(qobj)
 
         cmd_def.add('pv_test', 0, converted_instruction)

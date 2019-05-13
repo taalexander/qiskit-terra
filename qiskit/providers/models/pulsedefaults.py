@@ -11,8 +11,10 @@ from marshmallow.validate import Length, Range
 
 from qiskit.validation import BaseModel, BaseSchema, bind_schema
 from qiskit.validation.base import ObjSchema
-from qiskit.validation.fields import (Integer, List, Nested, Number, String)
-from qiskit.qobj import PulseLibraryItemSchema, PulseQobjInstructionSchema
+from qiskit.validation.fields import (Integer, List, Nested, Number, String,
+                                      ByType, Complex)
+from qiskit.qobj import (PulseLibraryItemSchema, PulseQobjInstructionSchema,
+                         PulseQobjInstruction)
 from qiskit.pulse import CmdDef
 
 
@@ -32,6 +34,12 @@ class DiscriminatorSchema(BaseSchema):
     params = Nested(ObjSchema)
 
 
+class CmdDefPulseQobjInstructionSchema(PulseQobjInstructionSchema):
+    """Instruction Schema for CmdDef instructions."""
+    val = ByType([Complex(), String()])
+    phase = ByType([Number(), String()])
+
+
 class CommandSchema(BaseSchema):
     """Schema for Command."""
 
@@ -41,7 +49,7 @@ class CommandSchema(BaseSchema):
     # Optional properties.
     qubits = List(Integer(validate=Range(min=0)),
                   validate=Length(min=1))
-    sequence = Nested(PulseQobjInstructionSchema, many=True)
+    sequence = Nested(CmdDefPulseQobjInstructionSchema, many=True)
 
 
 class PulseDefaultsSchema(BaseSchema):
@@ -75,6 +83,16 @@ class Discriminator(BaseModel):
 
     Please note that this class only describes the required fields. For the
     full description of the model, please check ``DiscriminatorSchema``.
+    """
+    pass
+
+
+@bind_schema(CmdDefPulseQobjInstructionSchema)
+class CmdDefPulseQobjInstruction(PulseQobjInstruction):
+    """Model for CmdDefPulseQobjInstruction.
+
+    Please note that this class only describes the required fields. For the
+    full description of the model, please check ``CmdDefPulseQobjInstructionSchema``.
     """
     pass
 
