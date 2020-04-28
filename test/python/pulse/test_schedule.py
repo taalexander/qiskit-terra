@@ -473,7 +473,7 @@ class TestScheduleBuilding(BaseTestSchedule):
         reference_sched = reference_sched.insert(
             100, ShiftPhase(0.1, DriveChannel(1)))
 
-        self.assertEqual(reference_sched.ch_duration(DriveChannel(0)), 100)
+        self.assertEqual(reference_sched.ch_duration(DriveChannel(0)), 20)
         self.assertEqual(reference_sched.ch_duration(DriveChannel(1)), 100)
 
     def test_ch_start_time(self):
