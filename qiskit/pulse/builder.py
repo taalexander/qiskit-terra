@@ -194,8 +194,10 @@ capabilities.
 """
 import collections
 import contextvars
+import copy
 import functools
 import itertools
+import inspect
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -237,28 +239,120 @@ T = TypeVar('T')  # pylint: disable=invalid-name
 StorageLocation = NewType('StorageLocation', Union[chans.MemorySlot, chans.RegisterSlot])
 
 
-def _compile_lazy_circuit_before(function: Callable[..., T]
-                                 ) -> Callable[..., T]:
-    """Decorator thats schedules and calls the lazily compiled circuit before
-    executing the decorated builder method."""
-    @functools.wraps(function)
-    def wrapper(self, *args, **kwargs):
-        self._compile_lazy_circuit()
-        return function(self, *args, **kwargs)
+def function(backend=None):
+
+    def wrapper(func):
+        return functools.wraps(func)(PulseFunction(func, backend=backend))
+
     return wrapper
 
 
-def _requires_backend(function: Callable[..., T]) -> Callable[..., T]:
+class PulseFunction:
+    """Callable pulse builder function."""
+    _ALLOWED_SIGNATURE_TYPES = Union[int, float, circuit.ParameterExpression]
+
+    def __init__(self, func: Callable, backend=None):
+        self.backend = backend
+
+        self.schedule = None
+        self.parameters = None
+
+        self._signature = None
+
+        self._build_function(func, backend=self.backend)
+
+    def _build_function(self, func: Callable, backend=None):
+        """Create a `PulseFunction` from a Python function."""
+        sig = self._parse_signature(func)
+        parameters = [circuit.Parameter(name) for name in sig.parameters.keys()]
+
+        name = getattr(callable, '__name__', None)
+
+        with build(backend=backend, name=name) as sched:
+            output = func(*parameters)
+            if output is not None:
+                raise exceptions.PulseError(
+                    'Functions decorated with "pulse.functions" '
+                    'are not currently allowed to return.'
+                )
+
+        self._signature = sig
+        self.schedule = sched
+        self.parameters = parameters
+
+    def _parse_signature(self, func):
+        input_sig = inspect.signature(func)
+
+        _allowed = self._ALLOWED_SIGNATURE_TYPES.__args__
+
+        for name, param in input_sig.parameters.items():
+            if param.annotation is None:
+                raise exceptions.PulseError(
+                    f'Parameter "{name}" is not annotated. All parameters must be annotated.'
+                )
+            elif not any([param.annotation == allowed for allowed in  _allowed]):
+                raise exceptions.PulseError(
+                    f'Parameter "{name}" is not one of the supported input types {_allowed}'
+                )
+            elif not (
+                  param.kind == inspect.Parameter.POSITIONAL_ONLY or
+                  param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+                    ):
+                raise exceptions.PulseError(
+                    'Only positional arguments are currently supported.'
+                )
+
+        return input_sig
+
+
+    def __call__(self, *args, **kwargs):
+        bound = self._validate_inputs(*args, **kwargs)
+
+        assigned = {p: v for p, v in zip(self.parameters, bound.arguments.values())}
+
+        callee = copy.deepcopy(self.schedule).assign_parameters(assigned)
+        call(callee)
+
+    def _validate_inputs(self, *args, **kwargs):
+        _allowed = self._ALLOWED_SIGNATURE_TYPES.__args__
+
+        bound = self._signature.bind(*args, **kwargs)
+
+        for name, val in bound.arguments.items():
+            if not isinstance(val, _allowed):
+                raise exceptions.PulseError(
+                    f'Parameter "{name}" of type "{type(val)}" is not one of the '
+                    f'supported input types {_allowed}'
+                )
+        return bound
+
+    
+    def draw(self, *args, **kwargs):
+        return self.schedule.draw(*args, **kwargs)
+
+
+def _compile_lazy_circuit_before(func: Callable[..., T]
+                                 ) -> Callable[..., T]:
+    """Decorator thats schedules and calls the lazily compiled circuit before
+    executing the decorated builder method."""
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        self._compile_lazy_circuit()
+        return func(self, *args, **kwargs)
+    return wrapper
+
+
+def _requires_backend(func: Callable[..., T]) -> Callable[..., T]:
     """Decorator a function to raise if it is called without a builder with a
     set backend.
     """
-    @functools.wraps(function)
+    @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         if self.backend is None:
             raise exceptions.BackendNotSet(
                 'This function requires the builder to '
                 'have a "backend" set.')
-        return function(self, *args, **kwargs)
+        return func(self, *args, **kwargs)
     return wrapper
 
 

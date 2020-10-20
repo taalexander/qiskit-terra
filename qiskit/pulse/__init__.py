@@ -393,6 +393,7 @@ from qiskit.pulse.builder import (
     active_transpiler_settings,
     active_circuit_scheduler_settings,
     build,
+    function,
     num_qubits,
     qubit_channels,
     samples_to_seconds,
