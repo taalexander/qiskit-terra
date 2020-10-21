@@ -326,7 +326,6 @@ class PulseFunction:
                 )
         return bound
 
-    
     def draw(self, *args, **kwargs):
         return self.schedule.draw(*args, **kwargs)
 
@@ -1880,6 +1879,26 @@ def macro(func: Callable):
 
     return wrapper
 
+
+def cal(name, qubits, backend=None, inst_map=None):
+    if inst_map is None:
+        inst_map = backend.defaults().instruction_schedule_map
+
+    # decorator for calibration function
+    def wrapper(func):
+        wrapped_func = function(backend=backend)(func)
+
+        @functools.wraps(wrapped_func)
+        def inst_map_wrapper(*args, **kwargs):
+            # activate the pulse builder before calling the function
+            with build(backend=backend) as gate:
+                wrapped_func(*args, **kwargs)
+            return gate
+
+        # register the built sequence
+        inst_map.add(name, qubits, inst_map_wrapper)
+        return wrapped_func
+    return wrapper
 
 def measure(qubits: Union[List[int], int],
             registers: Union[List[StorageLocation], StorageLocation] = None,
